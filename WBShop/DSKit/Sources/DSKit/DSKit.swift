@@ -218,5 +218,45 @@ public struct DSTypography {
     public static let buttonPriceText = Font.system(size: 14, weight: .semibold)
     public static let price = Font.system(size: 32, weight: .regular)
     public static let name = Font.system(size: 26, weight: .regular)
+    public static let nameCart = Font.custom("Inter", size: 14)
     
+}
+
+@available(iOS 16.0, *)
+public struct DSCounterView: View {
+    @Binding var count: Int
+    
+    public init(count: Binding<Int>) {
+        self._count = count
+    }
+    
+    public var body: some View {
+        HStack(spacing: 16) {
+            Button {
+                if count > 1 { count -= 1 }
+            } label: {
+                Image(systemName: "minus")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(count > 1 ? .black : .gray.opacity(0.5))
+            }
+            .disabled(count <= 1)
+            
+            Text("\(count)")
+                .font(DSTypography.body)
+                .frame(minWidth: 20)
+                .multilineTextAlignment(.center)
+            
+            Button {
+                count += 1
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.black)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(.systemGroupedBackground))
+        .cornerRadius(8)
+    }
 }

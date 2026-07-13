@@ -1,10 +1,3 @@
-//
-//  ProductDetailView.swift
-//  WBShop
-//
-//  Created by Полина Гельман on 12.07.2026.
-//
-
 import SwiftUI
 import DSKit
 import Core

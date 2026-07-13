@@ -10,9 +10,13 @@ struct AppRootView: View {
                 .navigationDestination(for: Route.self) { route in
                     switch route {
                         case .login: LoginView()
-                        case .content: ContentView()
+                        case .content: MainTabView()
                     }
                 }
         }
     }
+}
+
+#Preview {
+    AppRootView()
 }
