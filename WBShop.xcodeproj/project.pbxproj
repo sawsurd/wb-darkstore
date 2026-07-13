@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9B4A41CD30028C2200724075 /* Core in Frameworks */ = {isa = PBXBuildFile; productRef = 9B4A41CC30028C2200724075 /* Core */; };
+		9B4A41D030028C2600724075 /* DSKit in Frameworks */ = {isa = PBXBuildFile; productRef = 9B4A41CF30028C2600724075 /* DSKit */; };
 		9B54D76A2FF13E0300C00622 /* OpenAPIRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 9B54D7692FF13E0300C00622 /* OpenAPIRuntime */; };
 		9B54D76D2FF13E0900C00622 /* OpenAPIURLSession in Frameworks */ = {isa = PBXBuildFile; productRef = 9B54D76C2FF13E0900C00622 /* OpenAPIURLSession */; };
 		9B5FD6182FF5406400C15709 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 9B5FD6162FF5405C00C15709 /* .gitignore */; };
@@ -17,9 +19,23 @@
 		9B5FD6162FF5405C00C15709 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		9B4A41B430028B7600724075 /* Exceptions for "WBShop" folder in "WBShop" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Core,
+				DSKit,
+			);
+			target = 9B3295022FF12AB80092C1FD /* WBShop */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		9B3295052FF12AB80092C1FD /* WBShop */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				9B4A41B430028B7600724075 /* Exceptions for "WBShop" folder in "WBShop" target */,
+			);
 			path = WBShop;
 			sourceTree = "<group>";
 		};
@@ -30,8 +46,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9B4A41D030028C2600724075 /* DSKit in Frameworks */,
 				9B54D76A2FF13E0300C00622 /* OpenAPIRuntime in Frameworks */,
 				9B54D76D2FF13E0900C00622 /* OpenAPIURLSession in Frameworks */,
+				9B4A41CD30028C2200724075 /* Core in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -43,6 +61,7 @@
 			children = (
 				9B5FD6162FF5405C00C15709 /* .gitignore */,
 				9B3295052FF12AB80092C1FD /* WBShop */,
+				9B4A41CB30028C2200724075 /* Frameworks */,
 				9B3295042FF12AB80092C1FD /* Products */,
 			);
 			sourceTree = "<group>";
@@ -53,6 +72,13 @@
 				9B3295032FF12AB80092C1FD /* WBShop.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		9B4A41CB30028C2200724075 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -78,6 +104,8 @@
 			packageProductDependencies = (
 				9B54D7692FF13E0300C00622 /* OpenAPIRuntime */,
 				9B54D76C2FF13E0900C00622 /* OpenAPIURLSession */,
+				9B4A41CC30028C2200724075 /* Core */,
+				9B4A41CF30028C2600724075 /* DSKit */,
 			);
 			productName = WBShop;
 			productReference = 9B3295032FF12AB80092C1FD /* WBShop.app */;
@@ -389,6 +417,14 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		9B4A41CC30028C2200724075 /* Core */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Core;
+		};
+		9B4A41CF30028C2600724075 /* DSKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DSKit;
+		};
 		9B54D7692FF13E0300C00622 /* OpenAPIRuntime */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 9B54D7682FF13E0300C00622 /* XCRemoteSwiftPackageReference "swift-openapi-runtime" */;

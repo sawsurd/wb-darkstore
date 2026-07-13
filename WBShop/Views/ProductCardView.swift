@@ -1,11 +1,5 @@
-//
-//  ProductCardView.swift
-//  WBShop
-//
-//  Created by Полина Гельман on 28.06.2026.
-//
-
 import SwiftUI
+import DSKit
 
 struct ProductCardView: View {
     let product: ProductPreview
@@ -44,11 +38,12 @@ struct ProductCardView: View {
                     .frame(height: 37, alignment: .topLeading)
                 
             }
-                Text("\(formattedPrice) ₽")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.primary)
-                
-                Spacer()
+            
+            HStack {
+                DSButton(title: "\(formattedPrice) ₽", style: .lightPinkPurple, kind: .addToCart) {
+                }
+            }
+            Spacer()
 
         }
         .frame(width: width)
