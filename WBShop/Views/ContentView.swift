@@ -10,9 +10,9 @@ struct ContentView: View {
     @State private var productService = ProductService()
     @State private var selectedProduct: ProductPreview?
 
-    private let horizontalPadding: CGFloat = 12
-    private let cardSpacing: CGFloat = 3
-    private let rowSpacing: CGFloat = 18
+    private let horizontalPadding = DSSpacing.md
+    private let cardSpacing = DSSpacing.xs
+    private let rowSpacing = 18.0
 
     var body: some View {
         GeometryReader { geo in
@@ -41,7 +41,7 @@ struct ContentView: View {
             }
         }
         .navigationTitle("Для тебя")
-        .background(Color(.white))
+        .background(DSColors.surface)
         .task {
             await productService.fetchProducts()
         }
@@ -50,7 +50,7 @@ struct ContentView: View {
                 selectedProduct = nil
             }
                 .presentationDetents([.large])
-                .presentationCornerRadius(20)
+                .presentationCornerRadius(DSRadius.sheet)
                 .interactiveDismissDisabled(true)
         }
     }

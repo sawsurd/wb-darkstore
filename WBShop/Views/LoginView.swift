@@ -11,7 +11,7 @@ struct LoginView: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: DSSpacing.xl) {
             Text("Вход")
                 .font(DSTypography.title)
 
@@ -21,19 +21,19 @@ struct LoginView: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(DSTypography.caption)
-                    .foregroundColor(.red)
+                    .foregroundColor(DSColors.destructive)
             }
 
-            DSButton(title: "Войти", style: .gradient, kind: .fullWidthAction) {
+            DSButton(title: "Войти", style: .gradient) {
                 if authService.login(username: phone, password: password) {
-                    router.push(.content)
+                    router.login()
                 } else {
                     errorMessage = "Заполните оба поля"
                 }
             }
             .frame(maxWidth: 200)
         }
-        .padding(30)
+        .padding(DSSpacing.xxl)
         .background(DSColors.background)
     }
 }

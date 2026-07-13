@@ -9,43 +9,35 @@ struct ProductDetailView: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: DSSpacing.xl) {
                     Image(product.image)
                         .resizable()
                         .scaledToFill()
                         .frame(maxWidth: UIScreen.main.bounds.width, minHeight: 440, maxHeight: 440)
                         .clipped()
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: DSSpacing.xs) {
                         Text("\(Int(product.price)) ₽")
-                            .font(DSTypography.price)
+                            .font(DSTypography.display)
                         
                         HStack {
                             Text(product.name)
-                                .font(DSTypography.name)
+                                .font(DSTypography.title)
                             
                             Text("\(Int(product.weight))г")
-                                .font(DSTypography.name)
+                                .font(DSTypography.title)
                                 .foregroundStyle(DSColors.secondary)
                         }
                         Text(product.description)
                             .font(DSTypography.body)
-                            .padding(.top, 16)
+                            .padding(.top, DSSpacing.lg)
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, DSSpacing.lg)
 
                     Spacer()
                 }
             }
-            Button {
-                onDismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 24, weight: .regular))
-                    .foregroundColor(.black)
-                    .opacity(0.5)
-                    .padding(20)
-            }
+            DSCloseButton(action: onDismiss)
         }
     }
 }

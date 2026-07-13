@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-@available(iOS 13.0, *)
+@available(iOS 16.0, *)
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
@@ -14,7 +14,7 @@ extension Color {
     }
 }
 
-@available(iOS 13.0, *)
+@available(iOS 16.0, *)
 extension LinearGradient {
     static let figmaPurplePink = LinearGradient(
         gradient: Gradient(stops: [
@@ -47,82 +47,75 @@ extension LinearGradient {
     )
 }
 
-@available(iOS 15.0, *)
+@available(iOS 16.0, *)
 public enum DSButtonStyle {
-    case primary, secondary, destructive, gradient, lightPinkPurple
+    case primary
+    case secondary
+    case destructive
+    case gradient
+    case lightPurple
 
     var background: AnyShapeStyle {
         switch self {
-        case .primary: return AnyShapeStyle(DSColors.primary)
-        case .secondary: return AnyShapeStyle(DSColors.secondary)
-        case .destructive: return AnyShapeStyle(Color.red)
-        case .gradient: return AnyShapeStyle(LinearGradient.figmaPurplePink)
-        case .lightPinkPurple: return AnyShapeStyle(LinearGradient.figmaLightPinkPurple)
+        case .primary:
+            return AnyShapeStyle(DSColors.primary)
+        case .secondary:
+            return AnyShapeStyle(DSColors.secondary)
+        case .destructive:
+            return AnyShapeStyle(DSColors.destructive)
+        case .gradient:
+            return AnyShapeStyle(LinearGradient.figmaPurplePink)
+        case .lightPurple:
+            return AnyShapeStyle(LinearGradient.figmaLightPinkPurple)
         }
     }
 
-    var buttonTextColor: Color {
+    var foregroundColor: Color {
         switch self {
-        case .primary: return .white
-        case .secondary: return .black
-        case .destructive: return .white
-        case .gradient: return .white
-        case .lightPinkPurple: return .black
+        case .secondary,
+             .lightPurple:
+            return .black
+        default:
+            return .white
         }
     }
 }
 
 @available(iOS 16.0, *)
-public enum DSButtonKind {
-    case addToCart
-    case fullWidthAction
-
-    var showsIcon: Bool {
-        switch self {
-        case .addToCart: return true
-        case .fullWidthAction: return false
-        }
-    }
-
-    var isFullWidth: Bool {
-        switch self {
-        case .addToCart: return false
-        case .fullWidthAction: return true
-        }
-    }
-
+public enum DSButtonSize {
+    case compact
+    case regular
     var font: Font {
         switch self {
-        case .addToCart: return DSTypography.buttonPriceText
-        case .fullWidthAction: return DSTypography.body
+        case .compact:
+            return DSTypography.button
+        case .regular:
+            return DSTypography.bodyBold
         }
     }
 
     var horizontalPadding: CGFloat {
         switch self {
-        case .addToCart: return 12
-        case .fullWidthAction: return 20
+        case .compact:
+            return DSSpacing.md
+        case .regular:
+            return DSSpacing.xl
         }
     }
-
-    var topPadding: CGFloat {
+    var verticalPadding: CGFloat {
         switch self {
-        case .addToCart: return 6
-        case .fullWidthAction: return 14
+        case .compact:
+            return DSSpacing.sm
+        case .regular:
+            return 14
         }
     }
-
-    var bottomPadding: CGFloat {
-        switch self {
-        case .addToCart: return 9
-        case .fullWidthAction: return 14
-        }
-    }
-
     var cornerRadius: CGFloat {
         switch self {
-        case .addToCart: return 6
-        case .fullWidthAction: return 12
+        case .compact:
+            return DSRadius.sm
+        case .regular:
+            return DSRadius.lg
         }
     }
 }
@@ -131,40 +124,61 @@ public enum DSButtonKind {
 public struct DSButton: View {
     public let title: String
     public let style: DSButtonStyle
-    public let kind: DSButtonKind
+    public let size: DSButtonSize
+    public let icon: Image?
     public let action: () -> Void
 
-    public init(title: String, style: DSButtonStyle, kind: DSButtonKind = .fullWidthAction, action: @escaping () -> Void) {
+    public init(
+        title: String,
+        style: DSButtonStyle,
+        size: DSButtonSize = .regular,
+        icon: Image? = nil,
+        action: @escaping () -> Void
+    ) {
         self.title = title
         self.style = style
-        self.kind = kind
+        self.size = size
+        self.icon = icon
         self.action = action
     }
 
     public var body: some View {
         Button(action: action) {
-            HStack {
+            HStack(spacing: DSSpacing.sm) {
                 Text(title)
-                    .font(kind.font)
-                    .foregroundColor(style.buttonTextColor)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
-
-                if kind.showsIcon {
-                    Image("plus")
+                    .font(size.font)
+                if let icon {
+                    icon
                 }
             }
-            .frame(maxWidth: kind.isFullWidth ? .infinity : nil)
-            .padding(.horizontal, kind.horizontalPadding)
-            .padding(.top, kind.topPadding)
-            .padding(.bottom, kind.bottomPadding)
+            .foregroundColor(style.foregroundColor)
+            .padding(.horizontal, size.horizontalPadding)
+            .padding(.vertical, size.verticalPadding)
             .background(style.background)
-            .cornerRadius(kind.cornerRadius)
+            .cornerRadius(size.cornerRadius)
         }
     }
 }
 
-@available(iOS 13.0, *)
+@available(iOS 16.0, *)
+public struct DSCloseButton: View {
+    let action: () -> Void
+    
+    public init(action: @escaping () -> Void) {
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(action: action) {
+            Image(systemName: "xmark")
+                .font(.system(size: 24))
+                .foregroundStyle(.black.opacity(0.5))
+                .padding(DSSpacing.xl)
+        }
+    }
+}
+
+@available(iOS 16.0, *)
 public struct DSTextField: View {
     private let placeholder: String
     @Binding private var text: String
@@ -176,17 +190,21 @@ public struct DSTextField: View {
 
     public var body: some View {
         TextField(placeholder, text: $text)
-            .padding(.vertical, 8)
+            .font(DSTypography.body)
+            .padding(.horizontal, DSSpacing.xl)
+            .frame(height: 50)
+            .background(
+                RoundedRectangle(cornerRadius: DSRadius.lg)
+                    .fill(DSColors.surface)
+            )
             .overlay(
-                Rectangle()
-                    .frame(height: 1)
-                    .foregroundColor(Color.gray.opacity(0.5)),
-                alignment: .bottom
+                RoundedRectangle(cornerRadius: DSRadius.lg)
+                    .stroke(DSColors.border, lineWidth: 0.5)
             )
     }
 }
 
-@available(iOS 13.0, *)
+@available(iOS 16.0, *)
 public struct DSCard<Content: View>: View {
     private let content: Content
 
@@ -195,31 +213,56 @@ public struct DSCard<Content: View>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 8) { content }
-            .padding()
-            .background(Color.white)
-            .cornerRadius(12)
-            .shadow(radius: 4)
+        VStack(alignment: .leading,
+               spacing: DSSpacing.sm) {
+            content
+        }
+        .padding(DSSpacing.lg)
+        .background(DSColors.surface)
+        .cornerRadius(DSRadius.lg)
+        .shadow(radius: 4)
     }
 }
 
-@available(iOS 13.0, *)
-public struct DSColors {
+@available(iOS 16.0, *)
+public enum DSColors {
     public static let primary = Color.purple
     public static let secondary = Color.gray
     public static let background = Color(.systemBackground)
+    public static let surface = Color.white
+    public static let border = Color.gray.opacity(0.1)
+    public static let destructive = Color.red
+    public static let disabled = Color.gray.opacity(0.4)
+}
+
+public enum DSSpacing {
+    public static let xs: CGFloat = 4
+    public static let sm: CGFloat = 8
+    public static let sm_md: CGFloat = 10
+    public static let md: CGFloat = 12
+    public static let lg: CGFloat = 16
+    public static let xl: CGFloat = 20
+    public static let xxl: CGFloat = 24
+
+}
+
+public enum DSRadius {
+    public static let sm: CGFloat = 6
+    public static let md: CGFloat = 8
+    public static let lg: CGFloat = 12
+    public static let xl: CGFloat = 16
+    public static let sheet: CGFloat = 20
 }
 
 @available(iOS 16.0, *)
-public struct DSTypography {
-    public static let title = Font.system(size: 24, weight: .bold)
-    public static let body = Font.system(size: 16)
-    public static let caption = Font.system(size: 12)
-    public static let buttonPriceText = Font.system(size: 14, weight: .semibold)
-    public static let price = Font.system(size: 32, weight: .regular)
-    public static let name = Font.system(size: 26, weight: .regular)
-    public static let nameCart = Font.custom("Inter", size: 14)
-    
+public enum DSTypography {
+    public static let display = Font.custom("Inter", size: 32)
+    public static let title = Font.custom("Inter-SemiBold", size: 26)
+    public static let headline = Font.custom("Inter-Bold", size: 24)
+    public static let body = Font.custom("Inter", size: 16)
+    public static let bodyBold = Font.custom("Inter-SemiBold", size: 16)
+    public static let button = Font.custom("Inter-SemiBold", size: 14)
+    public static let caption = Font.custom("Inter", size: 14)
 }
 
 @available(iOS 16.0, *)
@@ -231,13 +274,13 @@ public struct DSCounterView: View {
     }
     
     public var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: DSSpacing.lg) {
             Button {
                 if count > 1 { count -= 1 }
             } label: {
                 Image(systemName: "minus")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(count > 1 ? .black : .gray.opacity(0.5))
+                    .foregroundColor(count > 1 ? .black : DSColors.disabled)
             }
             .disabled(count <= 1)
             
@@ -254,9 +297,41 @@ public struct DSCounterView: View {
                     .foregroundColor(.black)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, DSSpacing.md)
+        .padding(.vertical, DSSpacing.sm)
         .background(Color(.systemGroupedBackground))
-        .cornerRadius(8)
+        .cornerRadius(DSRadius.md)
+    }
+}
+
+private extension NumberFormatter {
+    static let price: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.usesGroupingSeparator = false
+        return formatter
+    }()
+}
+
+@available(iOS 16.0, *)
+public struct DSPriceText: View {
+    let value: Double
+    let font: Font
+
+    public init(_ value: Double, font: Font = DSTypography.display) {
+        self.value = value
+        self.font = font
+    }
+
+    public var body: some View {
+        Text(formattedPrice)
+            .font(font)
+    }
+
+    private var formattedPrice: String {
+        let string = NumberFormatter.price.string(from: NSNumber(value: value)) ?? "\(Int(value))"
+
+        return "\(string) ₽"
     }
 }

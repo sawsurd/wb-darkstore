@@ -14,6 +14,7 @@ public protocol RouterProtocol: AnyObject {
 @available(iOS 16.0, *)
 public final class Router: ObservableObject, RouterProtocol {
     @Published public var path = NavigationPath()
+    @Published public var isAuthenticated = false
 
     public init() {}
 
@@ -29,8 +30,9 @@ public final class Router: ObservableObject, RouterProtocol {
     public func popToRoot() {
         path.removeLast(path.count)
     }
-    
-    public func replace(with route: Route) {
-        path = NavigationPath([route])
+
+    public func login() {
+        isAuthenticated = true
+        path = NavigationPath()
     }
 }

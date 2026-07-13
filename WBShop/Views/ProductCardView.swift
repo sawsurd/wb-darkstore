@@ -9,44 +9,38 @@ struct ProductCardView: View {
         width * (256.0 / 174.0)
     }
     
-    private var formattedPrice: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.usesGroupingSeparator = false
-        formatter.locale = Locale(identifier: "ru_RU")
-        return formatter.string(from: NSNumber(value: product.price)) ?? "\(product.price)"
-    }
-    
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DSSpacing.sm) {
             Image(product.image)
                 .resizable()
                 .scaledToFill()
                 .frame(width: width, height: imageHeight)
-                .cornerRadius(16)
+                .cornerRadius(DSRadius.xl)
             
             HStack {
                 Text(product.name)
-                    .font(.system(size: 14, weight: .light))
-                    .foregroundColor(.primary)
+                    .font(DSTypography.caption)
                     .lineLimit(2)
                     .frame(height: 37, alignment: .topLeading)
                 
                 Text("\(product.weight, specifier: "%.0f") г")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(DSTypography.caption)
+                    .foregroundColor(DSColors.secondary)
                     .frame(height: 37, alignment: .topLeading)
                 
             }
             
             HStack {
-                DSButton(title: "\(formattedPrice) ₽", style: .lightPinkPurple, kind: .addToCart) {
+                DSButton(title: "\(Int(product.price)) ₽",
+                    style: .lightPurple,
+                    size: .compact,
+                    icon: Image("plus")) {
                 }
             }
             Spacer()
 
         }
         .frame(width: width)
-        .background(Color(.systemBackground))
+        .background(DSColors.background)
     }
 }

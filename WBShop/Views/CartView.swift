@@ -12,32 +12,24 @@ struct CartView: View {
                 VStack(alignment: .leading) {
                     HStack {
                         Text("Корзина")
-                            .font(DSTypography.price)
+                            .font(DSTypography.display)
                             
                         Text("4")
-                            .font(DSTypography.price)
+                            .font(DSTypography.display)
                             .foregroundStyle(DSColors.secondary)
                         Spacer()
                     }
-                    .padding(.top, 10)
-                    .padding(.horizontal, 12)
+                    .padding(.top, DSSpacing.sm_md)
+                    .padding(.horizontal, DSSpacing.md)
                     
-                    LazyVStack(spacing: 16) {
+                    LazyVStack(spacing: DSSpacing.lg) {
                         ForEach(0..<20, id: \.self) {_ in
                             CartItemView()
                         }
                     }
                     
                 }
-                Button {
-                    onDismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 24, weight: .regular))
-                        .foregroundColor(.black)
-                        .opacity(0.5)
-                        .padding(20)
-                }
+                DSCloseButton(action: onDismiss)
             }
         }
     }
@@ -53,31 +45,30 @@ struct CartItemView: View {
     @State private var count: Int = 1
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: DSSpacing.md) {
             Image("img1")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 100, height: 100)
                 .clipped()
-                .cornerRadius(8)
+                .cornerRadius(DSRadius.md)
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text("\(Double(count) * 128.99, specifier: "%.2f") ₽")
-                    .font(DSTypography.body)
+            VStack(alignment: .leading, spacing: DSSpacing.xs) {
+                DSPriceText(Double(count) * 128.99, font: DSTypography.body)
                 
                 HStack {
                     Text("Бутер с колбасой")
-                        .font(DSTypography.nameCart)
+                        .font(DSTypography.caption)
                     Text("400г")
-                        .font(DSTypography.nameCart)
+                        .font(DSTypography.caption)
                         .foregroundStyle(DSColors.secondary)
                 }
                 
                 DSCounterView(count: $count)
-                    .padding(.top, 12)
+                    .padding(.top, DSSpacing.md)
             }
             Spacer()
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, DSSpacing.md)
     }
 }
