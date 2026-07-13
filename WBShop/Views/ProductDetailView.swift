@@ -17,7 +17,7 @@ struct ProductDetailView: View {
                         .clipped()
 
                     VStack(alignment: .leading, spacing: DSSpacing.xs) {
-                        Text("\(Int(product.price)) ₽")
+                        DSPriceText(Double(product.price))
                             .font(DSTypography.display)
                         
                         HStack {

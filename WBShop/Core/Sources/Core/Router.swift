@@ -32,7 +32,9 @@ public final class Router: ObservableObject, RouterProtocol {
     }
 
     public func login() {
-        isAuthenticated = true
-        path = NavigationPath()
+        withAnimation(.easeInOut(duration: 0.35)) {
+            isAuthenticated = true
+            path = NavigationPath()
+        }
     }
 }
