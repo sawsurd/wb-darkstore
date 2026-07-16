@@ -1,10 +1,3 @@
-//
-//  ProductCardView.swift
-//  WBShop
-//
-//  Created by Полина Гельман on 28.06.2026.
-//
-
 import SwiftUI
 
 struct ProductCardView: View {
@@ -25,11 +18,42 @@ struct ProductCardView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Image(product.image)
-                .resizable()
-                .scaledToFill()
+            if let imageUrl = URL(string: product.image) {
+                AsyncImage(url: imageUrl) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                            .frame(width: width, height: imageHeight)
+                            .background(Color(.systemGray6))
+                        
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: width, height: imageHeight)
+                        
+                    case .failure:
+                        Image(systemName: "photo")
+                            .font(.largeTitle)
+                            .foregroundColor(.gray)
+                            .frame(width: width, height: imageHeight)
+                            .background(Color(.systemGray5))
+                        
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
                 .frame(width: width, height: imageHeight)
+                .clipped()
                 .cornerRadius(16)
+            } else {
+                Image(systemName: "photo")
+                    .font(.largeTitle)
+                    .foregroundColor(.gray)
+                    .frame(width: width, height: imageHeight)
+                    .background(Color(.systemGray5))
+                    .cornerRadius(16)
+            }
             
             HStack {
                 Text(product.name)
@@ -44,12 +68,12 @@ struct ProductCardView: View {
                     .frame(height: 37, alignment: .topLeading)
                 
             }
-                Text("\(formattedPrice) ₽")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.primary)
-                
-                Spacer()
-
+            
+            Text("\(formattedPrice) ₽")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.primary)
+            
+            Spacer()
         }
         .frame(width: width)
         .background(Color(.systemBackground))
