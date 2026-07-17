@@ -10,11 +10,41 @@ struct ProductDetailView: View {
         ZStack(alignment: .topTrailing) {
             ScrollView {
                 VStack(alignment: .leading, spacing: DSSpacing.xl) {
-                    Image(product.image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: UIScreen.main.bounds.width, minHeight: 440, maxHeight: 440)
+                    if let imageUrl = URL(string: product.image) {
+                        AsyncImage(url: imageUrl) { phase in
+                            switch phase {
+                            case .empty:
+                                ProgressView()
+                                    .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 440)
+                                    .background(Color(.systemGray6))
+                                
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 440)
+                                
+                            case .failure:
+                                Image(systemName: "photo")
+                                    .font(.largeTitle)
+                                    .foregroundColor(.gray)
+                                    .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 440)
+                                    .background(Color(.systemGray5))
+                                
+                            @unknown default:
+                                EmptyView()
+                            }
+                        }
                         .clipped()
+                        .cornerRadius(16)
+                    } else {
+                        Image(systemName: "photo")
+                            .font(.largeTitle)
+                            .foregroundColor(.gray)
+                            .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 440)
+                            .background(Color(.systemGray5))
+                            .cornerRadius(16)
+                    }
 
                     VStack(alignment: .leading, spacing: DSSpacing.xs) {
                         DSPriceText(Double(product.price))

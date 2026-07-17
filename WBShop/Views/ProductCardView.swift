@@ -36,7 +36,6 @@ struct ProductCardView: View {
                         EmptyView()
                     }
                 }
-                .frame(width: width, height: imageHeight)
                 .clipped()
                 .cornerRadius(16)
             } else {
@@ -68,10 +67,9 @@ struct ProductCardView: View {
                     icon: Image("plus")) {
                 }
             }
-            Spacer()
-
         }
         .frame(width: width)
         .background(DSColors.background)
+        .contentShape(Rectangle())
     }
 }

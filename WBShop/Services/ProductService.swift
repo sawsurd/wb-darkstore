@@ -59,6 +59,41 @@ final class ProductService {
     }
 
     func fetchProductDetail(id: String) async -> Product? {
-        mockProductDetails.first { $0.id == id }
+        do {
+            let response = try await client.get_sol_products_sol__lcub_id_rcub_(
+                path: .init(id: id)
+            )
+            switch response {
+            case .ok(let okResponse):
+                let body = try okResponse.body.json
+                await MainActor.run {
+                    self.errorMessage = nil
+                }
+                return body
+                
+            case .unauthorized(let error):
+                let message = try? error.body.json.error
+                await MainActor.run {
+                    self.errorMessage = message ?? "Требуется авторизация"
+                }
+                
+            case .default(let statusCode, let error):
+                let message = try? error.body.json.error
+                await MainActor.run {
+                    self.errorMessage = message ?? "Ошибка сервера (\(statusCode))"
+                }
+            case .notFound(let error):
+                let message = try? error.body.json.error
+                await MainActor.run {
+                    self.errorMessage = message ?? "Not found"
+                }
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Ошибка сети: \(error.localizedDescription)"
+            }
+        }
+        return nil
+        
     }
 }
