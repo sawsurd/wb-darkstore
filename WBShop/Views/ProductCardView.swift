@@ -10,12 +10,43 @@ struct ProductCardView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: DSSpacing.sm) {
-            Image(product.image)
-                .resizable()
-                .scaledToFill()
+        VStack(alignment: .leading, spacing: 8) {
+            if let imageUrl = URL(string: product.image) {
+                AsyncImage(url: imageUrl) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                            .frame(width: width, height: imageHeight)
+                            .background(Color(.systemGray6))
+                        
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: width, height: imageHeight)
+                        
+                    case .failure:
+                        Image(systemName: "photo")
+                            .font(.largeTitle)
+                            .foregroundColor(.gray)
+                            .frame(width: width, height: imageHeight)
+                            .background(Color(.systemGray5))
+                        
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
                 .frame(width: width, height: imageHeight)
-                .cornerRadius(DSRadius.xl)
+                .clipped()
+                .cornerRadius(16)
+            } else {
+                Image(systemName: "photo")
+                    .font(.largeTitle)
+                    .foregroundColor(.gray)
+                    .frame(width: width, height: imageHeight)
+                    .background(Color(.systemGray5))
+                    .cornerRadius(16)
+            }
             
             HStack {
                 Text(product.name)
