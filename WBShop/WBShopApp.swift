@@ -11,8 +11,9 @@ import Core
 @main
 struct WBShopApp: App {
     init() {
-            ServiceLocator.shared.register(service: AuthService() as AuthServicing)
-            ServiceLocator.shared.register(service: UserService() as UserServicing)
+        ServiceLocator.shared.register(service: AuthService() as AuthServicing)
+        ServiceLocator.shared.register(service: UserService() as UserServicing)
+        ServiceLocator.shared.register(service: CartService() as CartServicing)
         setupApiToken()
     }
     

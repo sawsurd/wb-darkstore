@@ -1,16 +1,18 @@
 import SwiftUI
 import DSKit
+import Core
 
 struct ProductCardView: View {
     let product: ProductPreview
     var width: CGFloat = 174
+    @Injected var cart: CartServicing
     
     private var imageHeight: CGFloat {
         width * (256.0 / 174.0)
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DSSpacing.sm) {
             if let imageUrl = URL(string: product.image) {
                 AsyncImage(url: imageUrl) { phase in
                     switch phase {
@@ -37,14 +39,14 @@ struct ProductCardView: View {
                     }
                 }
                 .clipped()
-                .cornerRadius(16)
+                .cornerRadius(DSRadius.xl)
             } else {
                 Image(systemName: "photo")
                     .font(.largeTitle)
                     .foregroundColor(.gray)
                     .frame(width: width, height: imageHeight)
                     .background(Color(.systemGray5))
-                    .cornerRadius(16)
+                    .cornerRadius(DSRadius.xl)
             }
             
             HStack {
@@ -65,6 +67,9 @@ struct ProductCardView: View {
                     style: .lightPurple,
                     size: .compact,
                     icon: Image("plus")) {
+                    Task {
+                        await cart.addProductToCart(id: product.id)
+                    }
                 }
             }
         }

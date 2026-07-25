@@ -267,31 +267,30 @@ public enum DSTypography {
 
 @available(iOS 16.0, *)
 public struct DSCounterView: View {
-    @Binding var count: Int
-    
-    public init(count: Binding<Int>) {
-        self._count = count
+    let count: Int
+    let onIncrement: () -> Void
+    let onDecrement: () -> Void
+
+    public init(count: Int, onIncrement: @escaping () -> Void, onDecrement: @escaping () -> Void) {
+        self.count = count
+        self.onIncrement = onIncrement
+        self.onDecrement = onDecrement
     }
     
     public var body: some View {
         HStack(spacing: DSSpacing.lg) {
-            Button {
-                if count > 1 { count -= 1 }
-            } label: {
+            Button(action: onDecrement) {
                 Image(systemName: "minus")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(count > 1 ? .black : DSColors.disabled)
+                    .foregroundColor(.black)
             }
-            .disabled(count <= 1)
             
             Text("\(count)")
                 .font(DSTypography.body)
                 .frame(minWidth: 20)
                 .multilineTextAlignment(.center)
             
-            Button {
-                count += 1
-            } label: {
+            Button(action: onIncrement) {
                 Image(systemName: "plus")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.black)

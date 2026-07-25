@@ -5,6 +5,7 @@ import DSKit
 struct CartView: View {
     let onDismiss: () -> Void
     @State private var count: Int = 0
+    @Injected var cart: CartServicing
 
     var body: some View {
         ScrollView {
@@ -14,7 +15,7 @@ struct CartView: View {
                         Text("Корзина")
                             .font(DSTypography.display)
                             
-                        Text("4")
+                        Text("\(cart.productsInCart.count)")
                             .font(DSTypography.display)
                             .foregroundStyle(DSColors.secondary)
                         Spacer()
@@ -23,14 +24,24 @@ struct CartView: View {
                     .padding(.horizontal, DSSpacing.md)
                     
                     LazyVStack(spacing: DSSpacing.lg) {
-                        ForEach(0..<20, id: \.self) {_ in
-                            CartItemView()
+                        ForEach(cart.productsInCart) { product in
+                            CartItemView(
+                                product: product,
+                                onIncrement: {
+                                    Task { await cart.addProductToCart(id: product.id) }
+                                },
+                                onDecrement: {
+                                    Task { await cart.removeProductFromCart(id: product.id) }
+                                }
+                            )
                         }
                     }
-                    
                 }
                 DSCloseButton(action: onDismiss)
             }
+        }
+        .task {
+            await cart.fetchProducts()
         }
     }
 }
@@ -42,30 +53,69 @@ struct CartView: View {
 }
 
 struct CartItemView: View {
-    @State private var count: Int = 1
+    let product: CartProduct
+    let onIncrement: () -> Void
+    let onDecrement: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: DSSpacing.md) {
-            Image("img1")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 100, height: 100)
-                .clipped()
+            if let imageUrl = URL(string: product.image) {
+                AsyncImage(url: imageUrl) { phase in
+                    switch phase {
+                    case .empty:
+                        ProgressView()
+                            .frame(width: 100, height: 100)
+                            .background(DSColors.secondary)
+
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 100, height: 100)
+                            .clipped()
+
+                    case .failure(let error):
+                        Image(systemName: "photo")
+                            .foregroundColor(DSColors.secondary)
+                            .frame(width: 100, height: 100)
+                            .background(DSColors.disabled)
+                            .onAppear {
+                                print("Ошибка загрузки картинки:", product.name, imageUrl, error)
+                            }
+
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
                 .cornerRadius(DSRadius.md)
-            
+            } else {
+                Image(systemName: "photo")
+                    .foregroundColor(DSColors.secondary)
+                    .frame(width: 100, height: 100)
+                    .background(DSColors.disabled)
+                    .cornerRadius(DSRadius.md)
+                    .onAppear {
+                        print("Невалидный URL картинки:", product.name, product.image)
+                    }
+            }
+
             VStack(alignment: .leading, spacing: DSSpacing.xs) {
-                DSPriceText(Double(count) * 128.99, font: DSTypography.body)
-                
+                DSPriceText(Double(product.quantity) * Double(product.price), font: DSTypography.body)
+
                 HStack {
-                    Text("Бутер с колбасой")
+                    Text(product.name)
                         .font(DSTypography.caption)
-                    Text("400г")
+                    Text("\(product.weight)г")
                         .font(DSTypography.caption)
                         .foregroundStyle(DSColors.secondary)
                 }
-                
-                DSCounterView(count: $count)
-                    .padding(.top, DSSpacing.md)
+
+                DSCounterView(
+                    count: product.quantity,
+                    onIncrement: onIncrement,
+                    onDecrement: onDecrement
+                )
+                .padding(.top, DSSpacing.md)
             }
             Spacer()
         }

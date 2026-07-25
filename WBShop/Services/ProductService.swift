@@ -30,7 +30,9 @@ final class ProductService {
                 let body = try okResponse.body.json
                 await MainActor.run {
                     self.products = body.data
-                    self.errorMessage = nil
+                    if self.errorMessage != nil {
+                        self.errorMessage = nil
+                    }
                 }
                 
             case .badRequest(let error):
@@ -67,7 +69,9 @@ final class ProductService {
             case .ok(let okResponse):
                 let body = try okResponse.body.json
                 await MainActor.run {
-                    self.errorMessage = nil
+                    if self.errorMessage != nil {
+                        self.errorMessage = nil
+                    }
                 }
                 return body
                 
