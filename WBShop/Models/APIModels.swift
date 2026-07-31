@@ -8,3 +8,5 @@
 import Foundation
 
 typealias ProductPreview = Components.Schemas.ProductPreview
+
+typealias Product = Components.Schemas.Product
