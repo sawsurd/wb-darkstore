@@ -15,7 +15,7 @@ struct ProductDetailView: View {
                             switch phase {
                             case .empty:
                                 ProgressView()
-                                    .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: 440)
+                                    .frame(width: UIScreen.main.bounds.width, height: 440)
                                     .background(Color(.systemGray6))
                                 
                             case .success(let image):
@@ -84,7 +84,14 @@ struct ProductDetailContainerView: View {
             if let product {
                 ProductDetailView(product: product, onDismiss: onDismiss)
             } else {
-                ProgressView("Загрузка...")
+                ZStack(alignment: .topTrailing) {
+                    ProgressView("Загрузка...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    DSCloseButton(action: onDismiss)
+                        .padding(.top, DSSpacing.md)
+                        .padding(.trailing, DSSpacing.md)
+                }
             }
         }
         .task {
