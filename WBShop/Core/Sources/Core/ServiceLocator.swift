@@ -4,7 +4,6 @@ public protocol ServiceLocating {
     func resolve<T>() -> T
 }
 
-@available(iOS 16.0, *)
 public final class ServiceLocator: ServiceLocating, @unchecked Sendable {
     public static let shared = ServiceLocator()
 

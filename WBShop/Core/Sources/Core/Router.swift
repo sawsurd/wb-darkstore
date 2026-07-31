@@ -11,7 +11,6 @@ public protocol RouterProtocol: AnyObject {
     func popToRoot()
 }
 
-@available(iOS 16.0, *)
 public final class Router: ObservableObject, RouterProtocol {
     @Published public var path = NavigationPath()
     @Published public var isAuthenticated = false

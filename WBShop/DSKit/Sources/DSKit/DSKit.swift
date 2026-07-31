@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 
-@available(iOS 16.0, *)
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
@@ -14,7 +13,6 @@ extension Color {
     }
 }
 
-@available(iOS 16.0, *)
 extension LinearGradient {
     static let figmaPurplePink = LinearGradient(
         gradient: Gradient(stops: [
@@ -47,7 +45,6 @@ extension LinearGradient {
     )
 }
 
-@available(iOS 16.0, *)
 public enum DSButtonStyle {
     case primary
     case secondary
@@ -81,7 +78,6 @@ public enum DSButtonStyle {
     }
 }
 
-@available(iOS 16.0, *)
 public enum DSButtonSize {
     case compact
     case regular
@@ -120,7 +116,6 @@ public enum DSButtonSize {
     }
 }
 
-@available(iOS 16.0, *)
 public struct DSButton: View {
     public let title: String
     public let style: DSButtonStyle
@@ -160,7 +155,6 @@ public struct DSButton: View {
     }
 }
 
-@available(iOS 16.0, *)
 public struct DSCloseButton: View {
     let action: () -> Void
     
@@ -178,7 +172,6 @@ public struct DSCloseButton: View {
     }
 }
 
-@available(iOS 16.0, *)
 public struct DSTextField: View {
     private let placeholder: String
     @Binding private var text: String
@@ -204,7 +197,6 @@ public struct DSTextField: View {
     }
 }
 
-@available(iOS 16.0, *)
 public struct DSCard<Content: View>: View {
     private let content: Content
 
@@ -224,7 +216,6 @@ public struct DSCard<Content: View>: View {
     }
 }
 
-@available(iOS 16.0, *)
 public enum DSColors {
     public static let primary = Color.purple
     public static let secondary = Color.gray
@@ -254,7 +245,6 @@ public enum DSRadius {
     public static let sheet: CGFloat = 20
 }
 
-@available(iOS 16.0, *)
 public enum DSTypography {
     public static let display = Font.custom("Inter", size: 32)
     public static let title = Font.custom("Inter-SemiBold", size: 26)
@@ -265,7 +255,6 @@ public enum DSTypography {
     public static let caption = Font.custom("Inter", size: 14)
 }
 
-@available(iOS 16.0, *)
 public struct DSCounterView: View {
     let count: Int
     let onIncrement: () -> Void
@@ -313,7 +302,6 @@ private extension NumberFormatter {
     }()
 }
 
-@available(iOS 16.0, *)
 public struct DSPriceText: View {
     let value: Double
     let font: Font
