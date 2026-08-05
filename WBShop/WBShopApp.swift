@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Core
+import DSKit
 
 @main
 struct WBShopApp: App {
@@ -15,6 +16,7 @@ struct WBShopApp: App {
         ServiceLocator.shared.register(service: UserService() as UserServicing)
         ServiceLocator.shared.register(service: CartService() as CartServicing)
         setupApiToken()
+        FontRegister.registerFonts()
     }
     
     var body: some Scene {

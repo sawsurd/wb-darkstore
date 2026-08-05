@@ -16,6 +16,7 @@ protocol CartServicing {
     var productsInCart: [CartProduct] { get set }
     func addProductToCart(id: String) async
     func removeProductFromCart(id: String) async
+    func createOrder(paymentMethod: String, addressId: String) async
 }
 
 @Observable
@@ -141,5 +142,50 @@ final class CartService: CartServicing {
         } catch {
             self.errorMessage = "Ошибка сети: \(error.localizedDescription)"
         }
+    }
+    
+    public func createOrder(paymentMethod: String, addressId: String) async {
+        do {
+            let response = try await client.post_sol_orders(
+                body: .json(
+                    .init(
+                        paymentMethod: paymentMethod,
+                        addressID: addressId
+                    )
+                )
+            )
+            switch response {
+            case .ok(_):
+                if self.errorMessage != nil {
+                    self.errorMessage = nil
+                }
+                print("ok")
+                await fetchProducts()
+                
+            case .default(let statusCode, let error):
+                let message = try? error.body.json.error
+                print("default")
+                self.errorMessage = message ?? "Ошибка сервера (\(statusCode))"
+                
+            case .badRequest(let error):
+                let message = try? error.body.json.error
+                print("bad req")
+                self.errorMessage = message ?? "Ошибка запроса"
+                
+            case .unauthorized(let error):
+                print("401")
+                let message = try? error.body.json.error
+                self.errorMessage = message ?? "Требуется авторизация"
+            }
+        } catch {
+            print(error.localizedDescription)
+            self.errorMessage = "Ошибка сети: \(error.localizedDescription)"
+        }
+    }
+}
+
+extension CartServicing {
+    var totalPrice: Int {
+        productsInCart.reduce(0) { $0 + $1.price * $1.quantity }
     }
 }

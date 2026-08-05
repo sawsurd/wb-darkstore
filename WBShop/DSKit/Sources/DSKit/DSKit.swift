@@ -81,12 +81,15 @@ public enum DSButtonStyle {
 public enum DSButtonSize {
     case compact
     case regular
+    case medium
     var font: Font {
         switch self {
         case .compact:
             return DSTypography.button
         case .regular:
             return DSTypography.bodyBold
+        case .medium:
+            return DSTypography.order
         }
     }
 
@@ -96,6 +99,8 @@ public enum DSButtonSize {
             return DSSpacing.md
         case .regular:
             return DSSpacing.xl
+        case .medium:
+            return 130
         }
     }
     var verticalPadding: CGFloat {
@@ -104,6 +109,8 @@ public enum DSButtonSize {
             return DSSpacing.sm
         case .regular:
             return 14
+        case .medium:
+            return 13
         }
     }
     var cornerRadius: CGFloat {
@@ -111,6 +118,8 @@ public enum DSButtonSize {
         case .compact:
             return DSRadius.sm
         case .regular:
+            return DSRadius.lg
+        case .medium:
             return DSRadius.lg
         }
     }
@@ -121,6 +130,7 @@ public struct DSButton: View {
     public let style: DSButtonStyle
     public let size: DSButtonSize
     public let icon: Image?
+    public let fillWidth: Bool
     public let action: () -> Void
 
     public init(
@@ -128,27 +138,36 @@ public struct DSButton: View {
         style: DSButtonStyle,
         size: DSButtonSize = .regular,
         icon: Image? = nil,
+        fillWidth: Bool = false,
         action: @escaping () -> Void
     ) {
         self.title = title
         self.style = style
         self.size = size
         self.icon = icon
+        self.fillWidth = fillWidth
         self.action = action
     }
 
     public var body: some View {
         Button(action: action) {
             HStack(spacing: DSSpacing.sm) {
+                if fillWidth {
+                    Spacer(minLength: 0)
+                }
                 Text(title)
                     .font(size.font)
                 if let icon {
                     icon
                 }
+                if fillWidth {
+                    Spacer(minLength: 0)
+                }
             }
             .foregroundColor(style.foregroundColor)
-            .padding(.horizontal, size.horizontalPadding)
+            .padding(.horizontal, fillWidth ? DSSpacing.md : size.horizontalPadding)
             .padding(.vertical, size.verticalPadding)
+            .frame(maxWidth: fillWidth ? .infinity : nil)
             .background(style.background)
             .cornerRadius(size.cornerRadius)
         }
@@ -247,11 +266,13 @@ public enum DSRadius {
 
 public enum DSTypography {
     public static let display = Font.custom("Inter", size: 32)
-    public static let title = Font.custom("Inter-SemiBold", size: 26)
-    public static let headline = Font.custom("Inter-Bold", size: 24)
+    public static let title = Font.custom("Inter", size: 26).weight(.semibold)
+    public static let headline = Font.custom("Inter", size: 24).weight(.bold)
     public static let body = Font.custom("Inter", size: 16)
-    public static let bodyBold = Font.custom("Inter-SemiBold", size: 16)
-    public static let button = Font.custom("Inter-SemiBold", size: 14)
+    public static let bodyBold = Font.custom("Inter", size: 16).weight(.semibold)
+    public static let priceBold = Font.custom("Inter", size: 17).weight(.bold)
+    public static let order = Font.custom("Inter", size: 20).weight(.semibold)
+    public static let button = Font.custom("Inter", size: 14).weight(.semibold)
     public static let caption = Font.custom("Inter", size: 14)
 }
 
