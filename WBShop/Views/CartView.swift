@@ -4,7 +4,6 @@ import DSKit
 
 struct CartView: View {
     let onDismiss: () -> Void
-    @State private var count: Int = 0
     @Injected var cart: CartServicing
 
     private var hasUnavailableProducts: Bool {
@@ -12,33 +11,42 @@ struct CartView: View {
     }
 
     var body: some View {
-        ScrollView {
-            ZStack(alignment: .topTrailing) {
-                VStack(alignment: .leading) {
-                    HStack {
-                        Text("Корзина")
-                            .font(DSTypography.display)
-                            
-                        Text("\(cart.productsInCart.count)")
-                            .font(DSTypography.display)
-                            .foregroundStyle(DSColors.secondary)
-                        Spacer()
-                    }
-                    .padding(.top, DSSpacing.sm_md)
-                    .padding(.horizontal, DSSpacing.md)
-                    
-                    LazyVStack(spacing: DSSpacing.lg) {
-                        ForEach(cart.productsInCart) { product in
-                            CartItemView(
-                                product: product,
-                                onIncrement: {
-                                    Task { await cart.addProductToCart(id: product.id) }
-                                },
-                                onDecrement: {
-                                    Task { await cart.removeProductFromCart(id: product.id) }
+        ZStack(alignment: .topTrailing) {
+            VStack(alignment: .leading, spacing: DSSpacing.cartTitleSpacingList) {
+                HStack {
+                    Text("Корзина")
+                        .font(DSTypography.display)
+                    Text("\(cart.productsInCart.count)")
+                        .font(DSTypography.display)
+                        .foregroundStyle(DSColors.secondary)
+                    Spacer()
+                }
+                .padding(.top, DSSpacing.sm_md)
+                .padding(.horizontal, DSSpacing.md)
+
+                List {
+                    ForEach(cart.productsInCart) { product in
+                        CartItemView(
+                            product: product,
+                            onIncrement: {
+                                Task { await cart.addProductToCart(id: product.id) }
+                            },
+                            onDecrement: {
+                                Task { await cart.removeProductFromCart(id: product.id) }
+                            }
+                        )
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                Task {
+                                    await cart.deleteProductFromCart(id: product.id)
                                 }
-                            )
+                            } label: {
+                                Label("Удалить", systemImage: "trash")
+                            }
                         }
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: DSSpacing.lg, trailing: 0))
                     }
                     
                     HStack {
@@ -47,8 +55,9 @@ struct CartView: View {
                         Spacer()
                         DSPriceText(Double(cart.totalPrice), font: DSTypography.priceBold)
                     }
-                    .padding(DSSpacing.md)
-                    
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+
                     DSButton(
                         title: "Заказать",
                         style: .gradient,
@@ -61,10 +70,13 @@ struct CartView: View {
                     }
                     .disabled(cart.productsInCart.isEmpty || hasUnavailableProducts)
                     .opacity(hasUnavailableProducts ? 0.5 : 1)
-                    .padding(12)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
                 }
-                DSCloseButton(action: onDismiss)
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
             }
+            DSCloseButton(action: onDismiss)
         }
         .task {
             await cart.fetchProducts()

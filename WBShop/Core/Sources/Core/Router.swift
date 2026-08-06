@@ -3,6 +3,7 @@ import SwiftUI
 public enum Route: Hashable {
     case content
     case login
+    case search
 }
 
 public protocol RouterProtocol: AnyObject {

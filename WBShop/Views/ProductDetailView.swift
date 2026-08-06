@@ -74,7 +74,7 @@ struct ProductDetailView: View {
 
 struct ProductDetailContainerView: View {
     let previewID: String
-    let productService: ProductService
+    @Injected var productService: ProductServicing
     let onDismiss: () -> Void
 
     @State private var product: Product?

@@ -36,6 +36,8 @@ struct AppRootView: View {
                     LoginView()
                 case .content:
                     MainTabView()
+                case .search:
+                    SearchView()
                 }
             }
         }

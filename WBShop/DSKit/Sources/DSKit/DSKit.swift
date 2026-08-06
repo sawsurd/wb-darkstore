@@ -207,7 +207,7 @@ public struct DSTextField: View {
             .frame(height: 50)
             .background(
                 RoundedRectangle(cornerRadius: DSRadius.lg)
-                    .fill(DSColors.surface)
+                    .fill(DSColors.background.opacity(0.76))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DSRadius.lg)
@@ -243,6 +243,7 @@ public enum DSColors {
     public static let border = Color.gray.opacity(0.1)
     public static let destructive = Color.red
     public static let disabled = Color.gray.opacity(0.4)
+    public static let black = Color.black
 }
 
 public enum DSSpacing {
@@ -253,6 +254,7 @@ public enum DSSpacing {
     public static let lg: CGFloat = 16
     public static let xl: CGFloat = 20
     public static let xxl: CGFloat = 24
+    public static let cartTitleSpacingList: CGFloat = 49
 
 }
 

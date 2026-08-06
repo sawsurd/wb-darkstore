@@ -2,10 +2,21 @@ import Foundation
 import OpenAPIRuntime
 import OpenAPIURLSession
 
+protocol ProductServicing {
+    var products: [ProductPreview] { get }
+    var errorMessage: String? { get }
+    var favProducts: [ProductPreview] { get }
+    
+    func fetchProducts() async
+    func fetchFavProducts() async
+    func fetchProductDetail(id: String) async -> Product?
+}
+
 @Observable
-final class ProductService {
+final class ProductService: ProductServicing {
     var products: [ProductPreview] = []
     var errorMessage: String?
+    var favProducts: [ProductPreview] = []
     
     private let client: APIProtocol
     
@@ -99,5 +110,12 @@ final class ProductService {
         }
         return nil
         
+    }
+    
+    func fetchFavProducts() async -> Void {
+        await fetchProducts()
+        self.favProducts = self.products.filter { product in
+            product.isFavorite
+        }
     }
 }
