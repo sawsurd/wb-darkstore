@@ -33,6 +33,7 @@ struct SearchView: View {
     @State private var searchResults: [ProductPreview] = []
     
     @Injected private var searchService: SearchServicing
+    @Injected private var productService: ProductServicing
 
     var body: some View {
         VStack(spacing: 0) {
@@ -57,7 +58,11 @@ struct SearchView: View {
             } else {
                 ProductGridView(
                     products: searchResults,
-                    onSelectProduct: { selectedProduct = $0 }
+                    onSelectProduct: { selectedProduct = $0 },
+                    isFavorite: { productService.isFavorite(id: $0) },
+                    onToggleFavorite: { product in
+                        Task { await productService.toggleFavorite(id: product.id) }
+                    }
                 )
             }
 

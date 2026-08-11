@@ -82,7 +82,7 @@ struct CategoryCardView: View {
                 .font(DSTypography.caption)
                 .foregroundColor(.black)
                 .lineLimit(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, minHeight: 32, alignment: .topLeading)
         }
     }
 }

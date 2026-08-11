@@ -19,7 +19,11 @@ struct CategoryProductsView: View {
             } else {
                 ProductGridView(
                     products: productService.categoryProducts,
-                    onSelectProduct: { selectedProduct = $0 }
+                    onSelectProduct: { selectedProduct = $0 },
+                    isFavorite: { productService.isFavorite(id: $0) },
+                    onToggleFavorite: { product in
+                        Task { await productService.toggleFavorite(id: product.id) }
+                    }
                 )
             }
         }

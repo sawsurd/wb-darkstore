@@ -4,6 +4,8 @@ import DSKit
 struct ProductGridView: View {
     let products: [ProductPreview]
     let onSelectProduct: (ProductPreview) -> Void
+    let isFavorite: (String) -> Bool
+    let onToggleFavorite: (ProductPreview) -> Void
 
     private let horizontalPadding = DSSpacing.md
     private let cardSpacing = DSSpacing.xs
@@ -24,6 +26,12 @@ struct ProductGridView: View {
                     LazyVGrid(columns: columns, spacing: rowSpacing) {
                         ForEach(products) { product in
                             ProductCardView(product: product, width: cardWidth)
+                                .overlay(alignment: .topTrailing) {
+                                    FavoriteButton(isFavorite: isFavorite(product.id)) {
+                                        onToggleFavorite(product)
+                                    }
+                                    .padding(8)
+                                }
                                 .onTapGesture {
                                     onSelectProduct(product)
                                 }

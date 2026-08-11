@@ -17,7 +17,11 @@ struct FavoritesView: View {
 
         ProductGridView(
             products: productService.favProducts,
-            onSelectProduct: { selectedProduct = $0 }
+            onSelectProduct: { selectedProduct = $0 },
+            isFavorite: { productService.isFavorite(id: $0) },
+            onToggleFavorite: { product in
+                Task { await productService.toggleFavorite(id: product.id) }
+            }
         )
         .navigationTitle("Избранное")
         .background(DSColors.surface)
@@ -37,4 +41,21 @@ struct FavoritesView: View {
 
 #Preview {
     FavoritesView()
+}
+
+struct FavoriteButton: View {
+    let isFavorite: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(isFavorite ? .red : .white)
+                .padding(8)
+                .background(.black.opacity(0.35))
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+    }
 }
