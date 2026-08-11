@@ -6,19 +6,25 @@ enum MainTab {
     case catalog
     case favorites
     case cart
+    case categories
 }
 
 struct MainTabView: View {
     @State private var selectedTab: MainTab = .catalog
-    @StateObject private var router: Router = ServiceLocator.shared.resolve()
-
+    @Injected var router: Router
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab("Каталог",
+            Tab("Все товары",
                 systemImage: "square.grid.2x2",
                 value: MainTab.catalog) {
                 ContentView()
+            }
+            
+            Tab("Категории",
+                systemImage: "list.bullet",
+                value: MainTab.categories) {
+                CategoriesView()
             }
 
             Tab("Избранное",
@@ -36,8 +42,8 @@ struct MainTabView: View {
             }
         }
         .overlay(alignment: .bottomLeading) {
-            if selectedTab == .catalog || selectedTab == .favorites {
-                SearchBarButton() {
+            if selectedTab != .cart {
+                SearchBarButton {
                     router.push(.search)
                 }
                     .padding(.horizontal, DSSpacing.lg)

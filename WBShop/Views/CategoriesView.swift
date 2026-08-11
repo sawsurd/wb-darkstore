@@ -4,8 +4,7 @@ import DSKit
 
 struct CategoriesView: View {
     @Injected var categoryService: CategoryServicing
-
-    let onSelectCategory: (Category) -> Void
+    @Injected var router: Router
 
     private let columns = [
         GridItem(.flexible(), spacing: DSSpacing.xs),
@@ -31,7 +30,7 @@ struct CategoriesView: View {
                         ForEach(categoryService.categories) { category in
                             CategoryCardView(category: category)
                                 .onTapGesture {
-                                    onSelectCategory(category)
+                                    router.push(.category(id: category.id, name: category.name))
                                 }
                         }
                     }
@@ -39,13 +38,6 @@ struct CategoriesView: View {
                 }
             }
             .padding(.bottom, 90)
-        }
-        .overlay(alignment: .bottom) {
-            SearchBarButton() {
-                print()
-            }
-                .padding(.horizontal, DSSpacing.md)
-                .padding(.bottom, 20)
         }
         .task {
             await categoryService.fetchCategories()

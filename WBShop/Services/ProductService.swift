@@ -6,10 +6,12 @@ protocol ProductServicing {
     var products: [ProductPreview] { get }
     var errorMessage: String? { get }
     var favProducts: [ProductPreview] { get }
-    
+    var categoryProducts: [ProductPreview] { get }
+
     func fetchProducts() async
     func fetchFavProducts() async
     func fetchProductDetail(id: String) async -> Product?
+    func fetchCategoryProducts(categoryId: String) async
 }
 
 @Observable
@@ -17,6 +19,7 @@ final class ProductService: ProductServicing {
     var products: [ProductPreview] = []
     var errorMessage: String?
     var favProducts: [ProductPreview] = []
+    var categoryProducts: [ProductPreview] = []
     
     private let client: APIProtocol
     
@@ -116,6 +119,47 @@ final class ProductService: ProductServicing {
         await fetchProducts()
         self.favProducts = self.products.filter { product in
             product.isFavorite
+        }
+    }
+    
+    func fetchCategoryProducts(categoryId: String) async {
+        do {
+            let response = try await client.get_sol_products(
+                query: .init(category: categoryId)
+            )
+
+            switch response {
+            case .ok(let okResponse):
+                let body = try okResponse.body.json
+                await MainActor.run {
+                    self.categoryProducts = body.data
+                    if self.errorMessage != nil {
+                        self.errorMessage = nil
+                    }
+                }
+
+            case .badRequest(let error):
+                let message = try? error.body.json.error
+                await MainActor.run {
+                    self.errorMessage = message ?? "Некорректный запрос"
+                }
+
+            case .unauthorized(let error):
+                let message = try? error.body.json.error
+                await MainActor.run {
+                    self.errorMessage = message ?? "Требуется авторизация"
+                }
+
+            case .default(let statusCode, let error):
+                let message = try? error.body.json.error
+                await MainActor.run {
+                    self.errorMessage = message ?? "Ошибка сервера (\(statusCode))"
+                }
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Ошибка сети: \(error.localizedDescription)"
+            }
         }
     }
 }
