@@ -65,7 +65,7 @@ struct CartView: View {
                         fillWidth: true
                     ) {
                         Task {
-                            await cart.createOrder(paymentMethod: "CASH", addressId: "cebd1c7a-f845-4f52-8792-90fc0b2c61dd")
+                            await cart.createOrder(paymentMethod: "CASH", addressId: "cebd1c7a-f845-4f52-8792-90fc0b2c61dd") // Пока что захардкожено
                         }
                     }
                     .disabled(cart.productsInCart.isEmpty || hasUnavailableProducts)

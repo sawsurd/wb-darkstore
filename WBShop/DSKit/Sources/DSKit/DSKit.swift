@@ -291,26 +291,26 @@ public struct DSCounterView: View {
     
     public var body: some View {
         HStack(spacing: DSSpacing.lg) {
-            Image(systemName: "minus")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.black)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onDecrement()
-                }
+            Button(action: onDecrement) {
+                Image(systemName: "minus")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.black)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
 
             Text("\(count)")
                 .font(DSTypography.body)
                 .frame(minWidth: 20)
                 .multilineTextAlignment(.center)
-            
-            Image(systemName: "plus")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.black)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onIncrement()
-                }
+
+            Button(action: onIncrement) {
+                Image(systemName: "plus")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.black)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, DSSpacing.md)
         .padding(.vertical, DSSpacing.sm)

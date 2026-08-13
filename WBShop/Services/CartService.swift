@@ -220,67 +220,86 @@ final class CartService: CartServicing {
                 if self.errorMessage != nil {
                     self.errorMessage = nil
                 }
-                print("ok")
                 await fetchProducts()
                 
             case .default(let statusCode, let error):
                 let message = try? error.body.json.error
-                print("default")
                 self.errorMessage = message ?? "Ошибка сервера (\(statusCode))"
                 
             case .badRequest(let error):
                 let message = try? error.body.json.error
-                print("bad req")
                 self.errorMessage = message ?? "Ошибка запроса"
                 
             case .unauthorized(let error):
-                print("401")
                 let message = try? error.body.json.error
                 self.errorMessage = message ?? "Требуется авторизация"
             }
         } catch {
-            print(error.localizedDescription)
             self.errorMessage = "Ошибка сети: \(error.localizedDescription)"
         }
+    }
+    
+    private enum DeleteItemOutcome {
+        case success
+        case failure(String)
     }
     
     public func deleteProductFromCart(id: String) async {
         guard let currentQuantity = cartQuantities[id], currentQuantity > 0 else { return }
         cartQuantities.removeValue(forKey: id)
-
-        for _ in 0..<currentQuantity {
-            do {
-                let response = try await client.delete_sol_cart_sol_items_sol__lcub_id_rcub_(
-                    path: .init(id: id)
-                )
-
-                switch response {
-                case .ok:
-                    continue
-
-                case .unauthorized(let error):
-                    cartQuantities[id] = currentQuantity
-                    let message = try? error.body.json.error
-                    self.errorMessage = message ?? "Требуется авторизация"
-                    return
-
-                case .notFound:
-                    continue
-
-                case .default(let statusCode, let error):
-                    cartQuantities[id] = currentQuantity
-                    let message = try? error.body.json.error
-                    self.errorMessage = message ?? "Ошибка сервера (\(statusCode))"
-                    return
+        let client = self.client
+        
+        let outcomes = await withTaskGroup(of: DeleteItemOutcome.self) { group in
+            for _ in 0..<currentQuantity {
+                group.addTask {
+                    do {
+                        let response = try await client.delete_sol_cart_sol_items_sol__lcub_id_rcub_(
+                            path: .init(id: id)
+                        )
+                        
+                        switch response {
+                        case .ok, .notFound:
+                            return .success
+                            
+                        case .unauthorized(let error):
+                            let message = try? error.body.json.error
+                            return .failure(message ?? "Требуется авторизация")
+                            
+                        case .default(let statusCode, let error):
+                            let message = try? error.body.json.error
+                            return .failure(message ?? "Ошибка сервера (\(statusCode))")
+                        }
+                    } catch {
+                        return .failure("Ошибка сети: \(error.localizedDescription)")
+                    }
                 }
-            } catch {
-                cartQuantities[id] = currentQuantity
-                self.errorMessage = "Ошибка сети: \(error.localizedDescription)"
-                return
             }
+            
+            var collected: [DeleteItemOutcome] = []
+            collected.reserveCapacity(currentQuantity)
+            for await outcome in group {
+                collected.append(outcome)
+            }
+            return collected
         }
-
-        if self.errorMessage != nil {
+        
+        let failures = outcomes.filter {
+            if case .failure = $0 { return true }
+            return false
+        }
+        let succeededCount = outcomes.count - failures.count
+        let remaining = currentQuantity - succeededCount
+        
+        if remaining > 0 {
+            cartQuantities[id] = remaining
+        }
+        
+        if let firstFailureMessage = failures.compactMap({ outcome -> String? in
+            if case .failure(let message) = outcome { return message }
+            return nil
+        }).first {
+            self.errorMessage = firstFailureMessage
+        } else if self.errorMessage != nil {
             self.errorMessage = nil
         }
     }
