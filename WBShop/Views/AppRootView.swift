@@ -36,6 +36,10 @@ struct AppRootView: View {
                     LoginView()
                 case .content:
                     MainTabView()
+                case .search:
+                    SearchView()
+                case .category(id: let id, name: let name):
+                    CategoryProductsView(categoryId: id, categoryName: name)
                 }
             }
         }
