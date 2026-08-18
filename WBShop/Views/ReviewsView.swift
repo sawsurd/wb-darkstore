@@ -83,7 +83,7 @@ struct ReviewsView: View {
                             showAddReview = true
                         }
 
-                        ForEach(Array((product.reviews ?? []).enumerated()), id: \.offset) { _, review in
+                        ForEach(product.reviews ?? [], id: \.self) { review in
                             ReviewView(review: review)
                         }
                     }
@@ -140,17 +140,18 @@ struct ReviewView: View {
 }
 
 struct AddReviewView: View {
+    @State private var showError = false
     @Injected private var productService: ProductServicing
     let product: Product
     let onReviewAdded: (Product) -> Void
     let onDismiss: () -> Void
-
-
+    
+    
     @State private var rating: Int = 0
     @State private var comment: String = ""
     @State private var images: [String] = []
     @State private var isSubmitting = false
-
+    
     var body: some View {
         ZStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DSSpacing.lg) {
@@ -158,7 +159,7 @@ struct AddReviewView: View {
                     .font(DSTypography.title)
                     .foregroundStyle(DSColors.black)
                     .padding(.top, DSSpacing.lg)
-
+                
                 HStack(spacing: DSSpacing.md) {
                     AsyncImage(url: URL(string: product.image)) { phase in
                         switch phase {
@@ -179,7 +180,7 @@ struct AddReviewView: View {
                     .clipped()
                     .cornerRadius(8)
                     .background(Color(.systemGray6))
-
+                    
                     VStack (alignment: .leading) {
                         HStack {
                             Text(product.name)
@@ -197,12 +198,12 @@ struct AddReviewView: View {
                     
                     
                 }
-
+                
                 VStack(alignment: .leading, spacing: DSSpacing.xs) {
                     Text("Оценка")
                         .font(DSTypography.body)
                         .foregroundStyle(DSColors.black)
-
+                    
                     HStack(spacing: DSSpacing.xs) {
                         ForEach(1...5, id: \.self) { star in
                             Image(systemName: star <= rating ? "star.fill" : "star")
@@ -214,12 +215,12 @@ struct AddReviewView: View {
                         }
                     }
                 }
-
+                
                 VStack(alignment: .leading, spacing: DSSpacing.xs) {
                     Text("Комментарий")
                         .font(DSTypography.body)
                         .foregroundStyle(DSColors.black)
-
+                    
                     TextEditor(text: $comment)
                         .frame(minHeight: 12)
                         .padding(DSSpacing.sm)
@@ -227,7 +228,7 @@ struct AddReviewView: View {
                         .cornerRadius(12)
                 }
                 Spacer()
-
+                
                 DSButton(
                     title: isSubmitting ? "Отправка..." : "Оставить отзыв",
                     style: .gradient,
@@ -238,7 +239,7 @@ struct AddReviewView: View {
                 }
             }
             .padding(.horizontal, DSSpacing.lg)
-
+            
             HStack {
                 Spacer()
                 DSCloseButton(action: onDismiss)
@@ -246,12 +247,20 @@ struct AddReviewView: View {
             .padding(.horizontal, DSSpacing.lg)
             .padding(.top, DSSpacing.lg)
         }
+        .alert(
+            "Ошибка",
+            isPresented: $showError
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(productService.errorMessage ?? "Не удалось отправить отзыв")
+        }
     }
-
+    
     private func submitReview() async {
         isSubmitting = true
         defer { isSubmitting = false }
-
+        
         if let updated = await productService.addReviewToProduct(
             productId: product.id,
             rating: rating,
@@ -259,7 +268,9 @@ struct AddReviewView: View {
             images: images
         ) {
             onReviewAdded(updated)
+            onDismiss()
+        } else {
+            showError = true
         }
-        onDismiss()
     }
 }
