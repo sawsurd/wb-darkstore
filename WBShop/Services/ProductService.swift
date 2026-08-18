@@ -15,6 +15,7 @@ protocol ProductServicing {
     func fetchCategoryProducts(categoryId: String) async
     func toggleFavorite(id: String) async
     func isFavorite(id: String) -> Bool
+    func addReviewToProduct(productId: String ,rating: Int, comment: String, images: [String]) async -> Product?
 }
 
 @Observable
@@ -31,6 +32,7 @@ final class ProductService: ProductServicing {
         do {
             client = Client(
                 serverURL: try Servers.Server1.url(),
+                configuration: .init(dateTranscoder: FlexibleISO8601DateTranscoder()),
                 transport: URLSessionTransport(),
                 middlewares: [AuthMiddleware()]
             )
@@ -78,32 +80,26 @@ final class ProductService: ProductServicing {
             await handleNetworkError(error)
         }
     }
-
+    
     func fetchProductDetail(id: String) async -> Product? {
         do {
-            let response = try await client.get_sol_products_sol__lcub_id_rcub_(
-                path: .init(id: id)
-            )
+            let response = try await client.get_sol_products_sol__lcub_id_rcub_(path: .init(id: id))
             switch response {
             case .ok(let okResponse):
                 let body = try okResponse.body.json
                 await MainActor.run { self.clearError() }
                 return body
-                
-            case .unauthorized(let error):
-                await handleError(try? error.body.json.error, default: "Требуется авторизация")
-                
-            case .default(let statusCode, let error):
-                await handleError(try? error.body.json.error, default: "Ошибка сервера (\(statusCode))")
-                
-            case .notFound(let error):
-                await handleError(try? error.body.json.error, default: "Not found")
+            case .unauthorized:
+                await handleError(nil, default: "Требуется авторизация")
+            case .default(let statusCode, _):
+                await handleError(nil, default: "Ошибка сервера (\(statusCode))")
+            case .notFound:
+                await handleError(nil, default: "Not found")
             }
         } catch {
             await handleNetworkError(error)
         }
         return nil
-        
     }
     
     func fetchFavProducts() async -> Void {
@@ -115,7 +111,7 @@ final class ProductService: ProductServicing {
             let response = try await client.get_sol_products(
                 query: .init(category: categoryId)
             )
-
+            
             switch response {
             case .ok(let okResponse):
                 let body = try okResponse.body.json
@@ -123,13 +119,13 @@ final class ProductService: ProductServicing {
                     self.categoryProducts = body.data
                     self.clearError()
                 }
-
+                
             case .badRequest(let error):
                 await handleError(try? error.body.json.error, default: "Некорректный запрос")
-
+                
             case .unauthorized(let error):
                 await handleError(try? error.body.json.error, default: "Требуется авторизация")
-
+                
             case .default(let statusCode, let error):
                 await handleError(try? error.body.json.error, default: "Ошибка сервера (\(statusCode))")
             }
@@ -247,5 +243,34 @@ final class ProductService: ProductServicing {
         } else {
             favProducts.removeAll { $0.id == id }
         }
+    }
+    
+    @discardableResult
+    func addReviewToProduct(productId: String, rating: Int, comment: String, images: [String] = []) async -> Product? {
+        do {
+            let response = try await client.post_sol_products_sol__lcub_id_rcub__sol_reviews(
+                path: .init(id: productId),
+                body: .json(.init(rating: rating, content: comment, images: images))
+            )
+            
+            switch response {
+            case .ok:
+                let updatedProduct = await fetchProductDetail(id: productId)
+                await MainActor.run { self.clearError() }
+                return updatedProduct
+                
+            case .unauthorized(let error):
+                await handleError(try? error.body.json.error, default: "Требуется авторизация")
+                
+            case .default(let statusCode, let error):
+                await handleError(try? error.body.json.error, default: "Ошибка сервера (\(statusCode))")
+                
+            case .badRequest(let error):
+                await handleError(try? error.body.json.error, default: "Bad request")
+            }
+        } catch {
+            await handleNetworkError(error)
+        }
+        return nil
     }
 }
