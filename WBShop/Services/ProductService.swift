@@ -228,20 +228,12 @@ final class ProductService: ProductServicing {
         }
     }
     
+    @MainActor
     private func applyFavoriteChange(id: String, isFavorite: Bool) {
         if isFavorite {
             favoriteIds.insert(id)
         } else {
             favoriteIds.remove(id)
-        }
-        
-        if isFavorite {
-            if let preview = (products.first { $0.id == id } ?? categoryProducts.first { $0.id == id }),
-               !favProducts.contains(where: { $0.id == id }) {
-                favProducts.append(preview)
-            }
-        } else {
-            favProducts.removeAll { $0.id == id }
         }
     }
     
