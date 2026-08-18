@@ -35,6 +35,19 @@ struct ReviewsView: View {
     @State private var product: Product
     let onDismiss: () -> Void
     @State private var showAddReview = false
+    private var averageRating: Double {
+        let count = product.reviews?.count ?? 0
+
+        guard count > 0 else {
+            return 0
+        }
+
+        let totalRating = product.reviews?
+            .compactMap(\.rating)
+            .reduce(0, +) ?? 0
+
+        return Double(totalRating) / Double(count)
+    }
 
     init(product: Product, onDismiss: @escaping () -> Void) {
         self._product = State(initialValue: product)
@@ -44,8 +57,6 @@ struct ReviewsView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             let count = self.product.reviews?.count ?? 0
-            let totalRating = self.product.reviews?.compactMap(\.rating).reduce(0, +) ?? 0
-            let averageRating: Double = Double(totalRating) / Double(count)
             
             VStack(spacing: 16) {
                 HStack {
