@@ -276,6 +276,7 @@ public enum DSTypography {
     public static let order = Font.custom("Inter", size: 20).weight(.semibold)
     public static let button = Font.custom("Inter", size: 14).weight(.semibold)
     public static let caption = Font.custom("Inter", size: 14)
+    public static let reviewAvgRating = Font.custom("Inter", size: 94)
 }
 
 public struct DSCounterView: View {

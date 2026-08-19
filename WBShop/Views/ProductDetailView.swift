@@ -5,6 +5,8 @@ import Core
 struct ProductDetailView: View {
     let product: Product
     let onDismiss: () -> Void
+    @State private var showReviews = false
+
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -58,6 +60,29 @@ struct ProductDetailView: View {
                                 .font(DSTypography.title)
                                 .foregroundStyle(DSColors.secondary)
                         }
+                        HStack (alignment: .center) {
+                            Text(String(format: "%.1f", product.rating))
+                                .font(DSTypography.body)
+                            
+                            RatingStarsView(rating: Double(product.rating), starSize: DSTypography.caption)
+                            
+                            Button {
+                                showReviews = true
+                            } label: {
+                                HStack(alignment: .center) {
+                                    Image("review")
+
+                                    let count = product.reviews?.count ?? 0
+                                    Text("\(count) \(reviewsWord(count))")
+
+                                    Image(systemName: "chevron.right")
+                                }
+                                .font(DSTypography.body)
+                                .foregroundStyle(DSColors.black)
+                            }
+                        }
+
+                        
                         Text(product.description)
                             .font(DSTypography.body)
                             .padding(.top, DSSpacing.lg)
@@ -68,6 +93,11 @@ struct ProductDetailView: View {
                 }
             }
             DSCloseButton(action: onDismiss)
+        }
+        .sheet(isPresented: $showReviews) {
+            ReviewsView(product: product) {
+                showReviews = false
+            }
         }
     }
 }

@@ -13,6 +13,8 @@ typealias Product = Components.Schemas.Product
 
 typealias Category = Components.Schemas.Category
 
+typealias Review = Components.Schemas.Review
+
 extension Category: Identifiable {}
 
 struct CartModel {

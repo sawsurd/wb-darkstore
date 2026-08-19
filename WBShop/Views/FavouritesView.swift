@@ -34,7 +34,6 @@ struct FavoritesView: View {
             }
             .presentationDetents([.large])
             .presentationCornerRadius(DSRadius.sheet)
-            .interactiveDismissDisabled(true)
         }
     }
 }
