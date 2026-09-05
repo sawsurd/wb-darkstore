@@ -8,13 +8,22 @@
 import SwiftUI
 import Core
 import DSKit
+import SwiftData
 
 @main
 struct WBShopApp: App {
+    private let modelContainer: ModelContainer
+    
     init() {
+        do {
+            self.modelContainer = try ModelContainer(for: CartItemModel.self)
+        } catch {
+            fatalError("Не удалось создать ModelContainer: \(error)")
+        }
+        
         ServiceLocator.shared.register(service: AuthService() as AuthServicing)
         ServiceLocator.shared.register(service: UserService() as UserServicing)
-        ServiceLocator.shared.register(service: CartService() as CartServicing)
+        ServiceLocator.shared.register(service: CartService(modelContainer: modelContainer) as CartServicing)
         ServiceLocator.shared.register(service: ProductService() as ProductServicing)
         ServiceLocator.shared.register(service: CategoryService() as CategoryServicing)
         ServiceLocator.shared.register(service: SearchService() as SearchServicing)
@@ -26,6 +35,7 @@ struct WBShopApp: App {
         WindowGroup {
             AppRootView()
         }
+        .modelContainer(modelContainer)
     }
     
     private func setupApiToken() {
