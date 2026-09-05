@@ -14,7 +14,7 @@ extension Color {
 }
 
 extension LinearGradient {
-    static let figmaPurplePink = LinearGradient(
+    public static let figmaPurplePink = LinearGradient(
         gradient: Gradient(stops: [
             .init(color: Color(hex: "ED3CCA"), location: 0.0049),
             .init(color: Color(hex: "DF34D2"), location: 0.1488),
@@ -29,7 +29,7 @@ extension LinearGradient {
         endPoint: UnitPoint(x: 0.996, y: 0.563)
     )
 
-    static let figmaLightPinkPurple = LinearGradient(
+    public static let figmaLightPinkPurple = LinearGradient(
         gradient: Gradient(stops: [
             .init(color: Color(hex: "FEF1FB"), location: 0.0049),
             .init(color: Color(hex: "FDF1FC"), location: 0.1488),
@@ -42,6 +42,21 @@ extension LinearGradient {
         ]),
         startPoint: UnitPoint(x: 0.004, y: 0.437),
         endPoint: UnitPoint(x: 0.996, y: 0.563)
+    )
+    
+    public static let figmaSubtlePinkPurple = LinearGradient(
+        gradient: Gradient(stops: [
+            .init(color: Color(hex: "FEF1FB"), location: 0.0049),
+            .init(color: Color(hex: "FDF1FC"), location: 0.1488),
+            .init(color: Color(hex: "FCF0FC"), location: 0.2927),
+            .init(color: Color(hex: "FBF0FD"), location: 0.4314),
+            .init(color: Color(hex: "F9EFFD"), location: 0.5702),
+            .init(color: Color(hex: "F8EEFE"), location: 0.7089),
+            .init(color: Color(hex: "F6EEFE"), location: 0.8476),
+            .init(color: Color(hex: "FFFFFF"), location: 0.9915)
+        ]),
+        startPoint: .top,
+        endPoint: .bottom
     )
 }
 
@@ -244,6 +259,7 @@ public enum DSColors {
     public static let destructive = Color.red
     public static let disabled = Color.gray.opacity(0.4)
     public static let black = Color.black
+    public static let blue = Color.blue
 }
 
 public enum DSSpacing {
