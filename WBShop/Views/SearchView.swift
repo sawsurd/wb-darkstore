@@ -91,6 +91,12 @@ struct SearchView: View {
             }
             .presentationDetents([.large])
         }
+        .errorAlert(
+            message: productService.errorMessage,
+            onDismiss: {
+                productService.clearError()
+            }
+        )
     }
 
     private func saveRecentSearch(_ text: String) {

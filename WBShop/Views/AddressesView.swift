@@ -394,6 +394,12 @@ struct AddressesSelectionListView: View {
                 selectedAddressId = userService.addresses.first?.id
             }
         }
+        .errorAlert(
+            message: userService.errorMessage,
+            onDismiss: {
+                userService.clearErrorMessage()
+            }
+        )
     }
 
     @ViewBuilder

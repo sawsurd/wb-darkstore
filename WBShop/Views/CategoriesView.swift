@@ -42,6 +42,12 @@ struct CategoriesView: View {
         .task {
             await categoryService.fetchCategories()
         }
+        .errorAlert(
+            message: categoryService.errorMessage,
+            onDismiss: {
+                categoryService.clearErrorMessage()
+            }
+        )
     }
 }
 

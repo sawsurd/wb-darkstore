@@ -39,5 +39,11 @@ struct CategoryProductsView: View {
             await productService.fetchCategoryProducts(categoryId: categoryId)
             isLoading = false
         }
+        .errorAlert(
+            message: productService.errorMessage,
+            onDismiss: {
+                productService.clearError()
+            }
+        )
     }
 }

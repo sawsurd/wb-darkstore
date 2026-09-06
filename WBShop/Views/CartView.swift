@@ -184,6 +184,19 @@ struct CartView: View {
 
             savedSelectedAddressId = newValue
         }
+        .errorAlert(
+            message: cart.errorMessage,
+            onDismiss: {
+                cart.clearErrorMessage()
+            }
+        )
+        .errorAlert(
+            message: userService.errorMessage,
+            onDismiss: {
+                userService.clearErrorMessage()
+            }
+        )
+        
     }
 }
 

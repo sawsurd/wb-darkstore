@@ -247,14 +247,12 @@ struct AddReviewView: View {
             .padding(.horizontal, DSSpacing.lg)
             .padding(.top, DSSpacing.lg)
         }
-        .alert(
-            "Ошибка",
-            isPresented: $showError
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(productService.errorMessage ?? "Не удалось отправить отзыв")
-        }
+        .errorAlert(
+            message: productService.errorMessage,
+            onDismiss: {
+                productService.clearError()
+            }
+        )
     }
     
     private func submitReview() async {

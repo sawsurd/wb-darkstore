@@ -15,11 +15,13 @@ struct CartProduct: Identifiable, Hashable {
 protocol CartServicing {
     func fetchProducts() async
     var productsInCart: [CartProduct] { get }
+    var errorMessage: String? { get }
     var cartQuantities: [String: Int] { get }
     func addProductToCart(id: String, productInfo: CartProduct?) async
     func removeProductFromCart(id: String) async
     func deleteProductFromCart(id: String) async
     func createOrder(paymentMethod: String, addressId: String) async
+    func clearErrorMessage()
 }
 
 extension CartServicing {
@@ -32,7 +34,7 @@ extension CartServicing {
 final class CartService: CartServicing {
     private let client: APIProtocol
     private let modelContainer: ModelContainer
-    private var errorMessage: String?
+    public var errorMessage: String?
     private var isFetching = false
     
     public private(set) var cartQuantities: [String: Int] = [:]
@@ -104,9 +106,7 @@ final class CartService: CartServicing {
                 }
                 self.productDetails = newDetails
                 saveLocalCart()
-                if self.errorMessage != nil {
-                    self.errorMessage = nil
-                }
+                clearErrorMessage()
 
             case .unauthorized(let error):
                 let message = try? error.body.json.error
@@ -136,9 +136,7 @@ final class CartService: CartServicing {
 
             switch response {
             case .ok:
-                if self.errorMessage != nil {
-                    self.errorMessage = nil
-                }
+                clearErrorMessage()
                 if productDetails[id] == nil {
                     await fetchProducts()
                 }
@@ -196,10 +194,7 @@ final class CartService: CartServicing {
             switch response {
             case .ok:
                 saveLocalCart()
-
-                if self.errorMessage != nil {
-                    self.errorMessage = nil
-                }
+                clearErrorMessage()
 
             case .unauthorized(let error):
                 cartQuantities[id] = currentQuantity
@@ -238,9 +233,7 @@ final class CartService: CartServicing {
             )
             switch response {
             case .ok(_):
-                if self.errorMessage != nil {
-                    self.errorMessage = nil
-                }
+                clearErrorMessage()
                 await fetchProducts()
                 
             case .default(let statusCode, let error):
@@ -322,8 +315,8 @@ final class CartService: CartServicing {
             return nil
         }).first {
             self.errorMessage = firstFailureMessage
-        } else if self.errorMessage != nil {
-            self.errorMessage = nil
+        } else {
+            clearErrorMessage()
         }
     }
     
@@ -378,6 +371,12 @@ final class CartService: CartServicing {
             try context.save()
         } catch {
             print("Ошибка сохранения корзины: \(error)")
+        }
+    }
+    
+    public func clearErrorMessage() {
+        if errorMessage != nil {
+            errorMessage = nil
         }
     }
 }

@@ -127,5 +127,11 @@ struct ProductDetailContainerView: View {
         .task {
             product = await productService.fetchProductDetail(id: previewID)
         }
+        .errorAlert(
+            message: productService.errorMessage,
+            onDismiss: {
+                productService.clearError()
+            }
+        )
     }
 }
