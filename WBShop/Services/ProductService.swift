@@ -222,7 +222,6 @@ final class ProductService: ProductServicing {
         }
     }
     
-    @MainActor
     public func clearError() {
         if errorMessage != nil {
             errorMessage = nil
