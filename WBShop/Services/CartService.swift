@@ -195,27 +195,33 @@ final class CartService: CartServicing {
 
             switch response {
             case .ok:
+                saveLocalCart()
+
                 if self.errorMessage != nil {
                     self.errorMessage = nil
                 }
 
             case .unauthorized(let error):
                 cartQuantities[id] = currentQuantity
+                saveLocalCart()
                 let message = try? error.body.json.error
                 self.errorMessage = message ?? "Требуется авторизация"
 
             case .notFound(let error):
                 cartQuantities[id] = currentQuantity
+                saveLocalCart()
                 let message = try? error.body.json.error
                 self.errorMessage = message ?? "Товар не найден"
 
             case .default(let statusCode, let error):
                 cartQuantities[id] = currentQuantity
+                saveLocalCart()
                 let message = try? error.body.json.error
                 self.errorMessage = message ?? "Ошибка сервера (\(statusCode))"
             }
         } catch {
             cartQuantities[id] = currentQuantity
+            saveLocalCart()
             self.errorMessage = "Ошибка сети: \(error.localizedDescription)"
         }
     }
