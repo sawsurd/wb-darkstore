@@ -2,6 +2,8 @@ import SwiftUI
 import Core
 import DSKit
 
+extension Components.Schemas.Order: Identifiable {}
+
 struct CartView: View {
     let onDismiss: () -> Void
     @Injected var cart: CartServicing
@@ -9,6 +11,8 @@ struct CartView: View {
     @State private var selectedAddressId: String?
     @AppStorage("selectedAddressId") private var savedSelectedAddressId = ""
     @State private var isShowingAddressSelection = false
+    @State private var orderToShow: Order?
+    @State private var isPlacingOrder = false
 
     private var hasUnavailableProducts: Bool {
         cart.productsInCart.contains { !$0.isAvailable }
@@ -120,7 +124,7 @@ struct CartView: View {
 
                         VStack {
                             HStack {
-                                Text("\(totalProductsCount) товаров")
+                                Text("\(totalProductsCount) товар\(pluralSuffix(totalProductsCount))")
                                     .font(DSTypography.caption)
                                 Spacer()
                                 DSPriceText(Double(cart.totalPrice), font: DSTypography.caption)
@@ -149,13 +153,9 @@ struct CartView: View {
                         size: .medium,
                         fillWidth: true
                     ) {
-                        Task {
-                            let addressIdToUse = selectedAddressId ?? userService.addresses.first?.id ?? ""
-                            await cart.createOrder(paymentMethod: "CASH", addressId: addressIdToUse)
-                            onDismiss()
-                        }
+                        Task { await placeOrder() }
                     }
-                    .disabled(cart.productsInCart.isEmpty || hasUnavailableProducts || userService.addresses.isEmpty)
+                    .disabled(cart.productsInCart.isEmpty || hasUnavailableProducts || userService.addresses.isEmpty || isPlacingOrder)
                     .opacity((hasUnavailableProducts || userService.addresses.isEmpty) ? 0.5 : 1)
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
@@ -179,6 +179,12 @@ struct CartView: View {
         .sheet(isPresented: $isShowingAddressSelection) {
             AddressesSelectionListView(selectedAddressId: $selectedAddressId)
         }
+        .sheet(item: $orderToShow) { order in
+            OrderDetailView(order: order) {
+                orderToShow = nil
+                onDismiss()
+            }
+        }
         .onChange(of: selectedAddressId) { _, newValue in
             guard let newValue else { return }
 
@@ -196,7 +202,17 @@ struct CartView: View {
                 userService.clearErrorMessage()
             }
         )
-        
+    }
+
+    private func placeOrder() async {
+        guard let addressIdToUse = selectedAddressId ?? userService.addresses.first?.id else { return }
+
+        isPlacingOrder = true
+        defer { isPlacingOrder = false }
+        await cart.createOrder(paymentMethod: "CASH", addressId: addressIdToUse)
+        guard cart.errorMessage == nil else { return }
+        await userService.getOrders()
+        orderToShow = userService.orders.first(where: { $0.status == .active })
     }
 }
 

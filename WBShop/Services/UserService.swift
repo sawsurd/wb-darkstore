@@ -5,6 +5,7 @@ import OpenAPIURLSession
 @MainActor
 protocol UserServicing {
     var addresses: [IdentifiableAddress] { get }
+    var orders: [Order] { get }
     var errorMessage: String? { get }
 
     func currentUserName() async -> String
@@ -13,12 +14,14 @@ protocol UserServicing {
     func updateAddress(id: String, _ address: Components.Schemas.Address) async -> Bool
     func deleteAddress(id: String) async
     func clearErrorMessage()
+    func getOrders() async
 }
 
 @Observable
 @MainActor
 final class UserService: UserServicing {
     var addresses: [IdentifiableAddress] = []
+    var orders: [Order] = []
     var errorMessage: String?
 
     private let client: APIProtocol
@@ -159,6 +162,23 @@ final class UserService: UserServicing {
     func clearErrorMessage() {
         if errorMessage != nil {
             errorMessage = nil
+        }
+    }
+    
+    func getOrders() async {
+        do {
+            let response = try await client.get_sol_orders(.init())
+            switch response {
+            case .ok(let okResponse):
+                orders = try okResponse.body.json
+                clearErrorMessage()
+            case .unauthorized(let error):
+                handleError(try? error.body.json.error, default: "Требуется авторизация")
+            case .default(let statusCode, let error):
+                handleError(try? error.body.json.error, default: "Ошибка сервера (\(statusCode))")
+            }
+        } catch {
+            handleNetworkError(error)
         }
     }
 }
