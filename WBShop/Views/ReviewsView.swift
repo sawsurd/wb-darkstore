@@ -161,7 +161,7 @@ struct AddReviewView: View {
                     .padding(.top, DSSpacing.lg)
                 
                 HStack(spacing: DSSpacing.md) {
-                    AsyncImage(url: URL(string: product.image)) { phase in
+                    CachedAsyncImage(url: URL(string: product.image)) { phase in
                         switch phase {
                         case .success(let image):
                             image

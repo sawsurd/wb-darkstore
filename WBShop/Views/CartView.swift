@@ -231,7 +231,7 @@ struct CartItemView: View {
         HStack(alignment: .top, spacing: DSSpacing.md) {
             ZStack {
                 if let imageUrl = URL(string: product.image) {
-                    AsyncImage(url: imageUrl) { phase in
+                    CachedAsyncImage(url: imageUrl) { phase in
                         switch phase {
                         case .empty:
                             ProgressView()

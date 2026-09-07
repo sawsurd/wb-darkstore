@@ -151,7 +151,7 @@ struct OrderItemRowView: View {
         HStack(alignment: .top, spacing: DSSpacing.md) {
             ZStack {
                 if let imageUrl = URL(string: item.image) {
-                    AsyncImage(url: imageUrl) { phase in
+                    CachedAsyncImage(url: imageUrl) { phase in
                         switch phase {
                         case .empty:
                             ProgressView()
