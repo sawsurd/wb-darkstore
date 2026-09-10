@@ -14,7 +14,7 @@ struct ProductCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DSSpacing.sm) {
             if let imageUrl = URL(string: product.image) {
-                AsyncImage(url: imageUrl) { phase in
+                CachedAsyncImage(url: imageUrl) { phase in
                     switch phase {
                     case .empty:
                         ProgressView()
