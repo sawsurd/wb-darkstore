@@ -13,6 +13,7 @@ struct CartView: View {
     @State private var isShowingAddressSelection = false
     @State private var orderToShow: Order?
     @State private var isPlacingOrder = false
+    @State private var isOrderSuccessPresented = false
 
     private var hasUnavailableProducts: Bool {
         cart.productsInCart.contains { !$0.isAvailable }
@@ -179,6 +180,23 @@ struct CartView: View {
         .sheet(isPresented: $isShowingAddressSelection) {
             AddressesSelectionListView(selectedAddressId: $selectedAddressId)
         }
+        .fullScreenCover(isPresented: $isOrderSuccessPresented) {
+            DSSuccessScreen(
+                title: "Заказ\nоформлен",
+                subtitle: "Товары уже в процессе сборки,\nскоро привезём!",
+                buttonTitle: "Закрыть",
+                onClose: {
+                    isOrderSuccessPresented = false
+                    onDismiss()
+                    orderToShow = userService.orders.first(where: { $0.status == .active })
+                },
+                onAction: {
+                    isOrderSuccessPresented = false
+                    onDismiss()
+                    orderToShow = userService.orders.first(where: { $0.status == .active })
+                }
+            )
+        }
         .sheet(item: $orderToShow) { order in
             OrderDetailView(order: order) {
                 orderToShow = nil
@@ -212,7 +230,7 @@ struct CartView: View {
         await cart.createOrder(paymentMethod: "CASH", addressId: addressIdToUse)
         guard cart.errorMessage == nil else { return }
         await userService.getOrders()
-        orderToShow = userService.orders.first(where: { $0.status == .active })
+        isOrderSuccessPresented = true
     }
 }
 
