@@ -54,13 +54,26 @@ actor CartStore {
         productDetails = loaded.details
     }
 
+    private func snapshot(errorMessage: String? = nil) -> Snapshot {
+        Snapshot(products: productsInCart, errorMessage: errorMessage)
+    }
+
+    private func restoreQuantity(id: String, to quantity: Int) {
+        if quantity > 0 {
+            cartQuantities[id] = quantity
+        } else {
+            cartQuantities.removeValue(forKey: id)
+        }
+        saveLocalCart()
+    }
+
     func currentSnapshot() -> Snapshot {
-        Snapshot(products: productsInCart, errorMessage: nil)
+        snapshot()
     }
 
     func fetchProducts() async -> Snapshot {
         guard !isFetching else {
-            return Snapshot(products: productsInCart, errorMessage: nil)
+            return snapshot()
         }
         isFetching = true
         defer { isFetching = false }
@@ -92,18 +105,16 @@ actor CartStore {
                 cartQuantities = newQuantities
                 productDetails = newDetails
                 saveLocalCart()
-                return Snapshot(products: productsInCart, errorMessage: nil)
+                return snapshot()
 
             case .unauthorized(let error):
-                let message = try? error.body.json.error
-                return Snapshot(products: productsInCart, errorMessage: message ?? "Требуется авторизация")
+                return snapshot(errorMessage: error.errorMessage ?? "Требуется авторизация")
 
             case .default(let statusCode, let error):
-                let message = try? error.body.json.error
-                return Snapshot(products: productsInCart, errorMessage: message ?? "Ошибка сервера (\(statusCode))")
+                return snapshot(errorMessage: error.errorMessage ?? "Ошибка сервера (\(statusCode))")
             }
         } catch {
-            return Snapshot(products: productsInCart, errorMessage: "Ошибка сети: \(error.localizedDescription)")
+            return snapshot(errorMessage: "Ошибка сети: \(error.localizedDescription)")
         }
     }
 
@@ -125,41 +136,29 @@ actor CartStore {
                 if productDetails[id] == nil {
                     return await fetchProducts()
                 }
-                return Snapshot(products: productsInCart, errorMessage: nil)
+                return snapshot()
 
             case .unauthorized(let error):
-                rollbackAdd(id: id, to: previousQuantity)
-                let message = try? error.body.json.error
-                return Snapshot(products: productsInCart, errorMessage: message ?? "Требуется авторизация")
+                restoreQuantity(id: id, to: previousQuantity)
+                return snapshot(errorMessage: error.errorMessage ?? "Требуется авторизация")
 
             case .notFound(let error):
-                rollbackAdd(id: id, to: previousQuantity)
-                let message = try? error.body.json.error
-                return Snapshot(products: productsInCart, errorMessage: message ?? "Товар не найден")
+                restoreQuantity(id: id, to: previousQuantity)
+                return snapshot(errorMessage: error.errorMessage ?? "Товар не найден")
 
             case .default(let statusCode, let error):
-                rollbackAdd(id: id, to: previousQuantity)
-                let message = try? error.body.json.error
-                return Snapshot(products: productsInCart, errorMessage: message ?? "Ошибка сервера (\(statusCode))")
+                restoreQuantity(id: id, to: previousQuantity)
+                return snapshot(errorMessage: error.errorMessage ?? "Ошибка сервера (\(statusCode))")
             }
         } catch {
-            rollbackAdd(id: id, to: previousQuantity)
-            return Snapshot(products: productsInCart, errorMessage: "Ошибка сети: \(error.localizedDescription)")
+            restoreQuantity(id: id, to: previousQuantity)
+            return snapshot(errorMessage: "Ошибка сети: \(error.localizedDescription)")
         }
-    }
-
-    private func rollbackAdd(id: String, to previousQuantity: Int) {
-        if previousQuantity > 0 {
-            cartQuantities[id] = previousQuantity
-        } else {
-            cartQuantities.removeValue(forKey: id)
-        }
-        saveLocalCart()
     }
 
     func removeProductFromCart(id: String) async -> Snapshot {
         guard let currentQuantity = cartQuantities[id], currentQuantity > 0 else {
-            return Snapshot(products: productsInCart, errorMessage: nil)
+            return snapshot()
         }
 
         let newQuantity = currentQuantity - 1
@@ -177,40 +176,33 @@ actor CartStore {
             switch response {
             case .ok:
                 saveLocalCart()
-                return Snapshot(products: productsInCart, errorMessage: nil)
+                return snapshot()
 
             case .unauthorized(let error):
-                cartQuantities[id] = currentQuantity
-                saveLocalCart()
-                let message = try? error.body.json.error
-                return Snapshot(products: productsInCart, errorMessage: message ?? "Требуется авторизация")
+                restoreQuantity(id: id, to: currentQuantity)
+                return snapshot(errorMessage: error.errorMessage ?? "Требуется авторизация")
 
             case .notFound(let error):
-                cartQuantities[id] = currentQuantity
-                saveLocalCart()
-                let message = try? error.body.json.error
-                return Snapshot(products: productsInCart, errorMessage: message ?? "Товар не найден")
+                restoreQuantity(id: id, to: currentQuantity)
+                return snapshot(errorMessage: error.errorMessage ?? "Товар не найден")
 
             case .default(let statusCode, let error):
-                cartQuantities[id] = currentQuantity
-                saveLocalCart()
-                let message = try? error.body.json.error
-                return Snapshot(products: productsInCart, errorMessage: message ?? "Ошибка сервера (\(statusCode))")
+                restoreQuantity(id: id, to: currentQuantity)
+                return snapshot(errorMessage: error.errorMessage ?? "Ошибка сервера (\(statusCode))")
             }
         } catch {
-            cartQuantities[id] = currentQuantity
-            saveLocalCart()
-            return Snapshot(products: productsInCart, errorMessage: "Ошибка сети: \(error.localizedDescription)")
+            restoreQuantity(id: id, to: currentQuantity)
+            return snapshot(errorMessage: "Ошибка сети: \(error.localizedDescription)")
         }
     }
 
     func deleteProductFromCart(id: String) async -> Snapshot {
         guard let currentQuantity = cartQuantities[id], currentQuantity > 0 else {
-            return Snapshot(products: productsInCart, errorMessage: nil)
+            return snapshot()
         }
         cartQuantities.removeValue(forKey: id)
 
-        let client = self.client // APIProtocol: Sendable — безопасно захватывать в дочерние Task
+        let client = self.client
 
         let outcomes = await withTaskGroup(of: DeleteItemOutcome.self) { group in
             for _ in 0..<currentQuantity {
@@ -225,12 +217,10 @@ actor CartStore {
                             return .success
 
                         case .unauthorized(let error):
-                            let message = try? error.body.json.error
-                            return .failure(message ?? "Требуется авторизация")
+                            return .failure(error.errorMessage ?? "Требуется авторизация")
 
                         case .default(let statusCode, let error):
-                            let message = try? error.body.json.error
-                            return .failure(message ?? "Ошибка сервера (\(statusCode))")
+                            return .failure(error.errorMessage ?? "Ошибка сервера (\(statusCode))")
                         }
                     } catch {
                         return .failure("Ошибка сети: \(error.localizedDescription)")
@@ -258,7 +248,7 @@ actor CartStore {
         }
         saveLocalCart()
 
-        return Snapshot(products: productsInCart, errorMessage: failures.first)
+        return snapshot(errorMessage: failures.first)
     }
 
     func createOrder(paymentMethod: String, addressId: String) async -> Snapshot {
@@ -277,23 +267,22 @@ actor CartStore {
                 return await fetchProducts()
 
             case .default(let statusCode, let error):
-                let message = try? error.body.json.error
-                return Snapshot(products: productsInCart, errorMessage: message ?? "Ошибка сервера (\(statusCode))")
+                return snapshot(errorMessage: error.errorMessage ?? "Ошибка сервера (\(statusCode))")
 
             case .badRequest(let error):
-                let message = try? error.body.json.error
-                return Snapshot(products: productsInCart, errorMessage: message ?? "Ошибка запроса")
+                return snapshot(errorMessage: error.errorMessage ?? "Ошибка запроса")
 
             case .unauthorized(let error):
-                let message = try? error.body.json.error
-                return Snapshot(products: productsInCart, errorMessage: message ?? "Требуется авторизация")
+                return snapshot(errorMessage: error.errorMessage ?? "Требуется авторизация")
             }
         } catch {
-            return Snapshot(products: productsInCart, errorMessage: "Ошибка сети: \(error.localizedDescription)")
+            return snapshot(errorMessage: "Ошибка сети: \(error.localizedDescription)")
         }
     }
 
-    private static func loadLocalCart( from modelContainer: ModelContainer) -> (quantities: [String: Int], details: [String: CartProduct]) {
+    private static func loadLocalCart(
+        from modelContainer: ModelContainer
+    ) -> (quantities: [String: Int], details: [String: CartProduct]) {
         let context = ModelContext(modelContainer)
 
         var quantities: [String: Int] = [:]
