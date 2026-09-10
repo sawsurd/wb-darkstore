@@ -8,13 +8,25 @@ extension ProductPreview: Identifiable {
 
 struct ContentView: View {
     @Injected var productService: ProductServicing
+    @Injected var router: Router
+
     @State private var selectedProduct: ProductPreview?
 
-    private let horizontalPadding = DSSpacing.md
-    private let cardSpacing = DSSpacing.xs
-    private let rowSpacing = 18.0
-
     var body: some View {
+        HStack {
+            Spacer()
+            Button {
+                router.push(.profile)
+            } label: {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(DSColors.black)
+                    .frame(width: 36, height: 36)
+                    .background(DSColors.lightPurple)
+                    .clipShape(Circle())
+            }
+        }
+        .padding()
         ProductGridView(
             products: productService.products,
             onSelectProduct: { selectedProduct = $0 },
@@ -23,7 +35,6 @@ struct ContentView: View {
                 Task { await productService.toggleFavorite(id: product.id) }
             }
         )
-        .navigationTitle("Для тебя")
         .background(DSColors.surface)
         .task {
             await productService.fetchProducts()
@@ -45,7 +56,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    NavigationStack {
-        ContentView()
-    }
+    ContentView()
 }

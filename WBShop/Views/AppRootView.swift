@@ -40,6 +40,8 @@ struct AppRootView: View {
                     SearchView()
                 case .category(id: let id, name: let name):
                     CategoryProductsView(categoryId: id, categoryName: name)
+                case .profile:
+                    ProfileView()
                 }
             }
         }

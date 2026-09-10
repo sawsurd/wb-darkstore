@@ -285,6 +285,7 @@ public enum DSColors {
     public static let blue = Color.blue
     public static let white = Color.white
     public static let lightPurple = Color.purple.opacity(0.1)
+    public static let smoky = Color(hex: "F6F6FA")
 }
 
 public enum DSSpacing {
