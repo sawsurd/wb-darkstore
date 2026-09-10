@@ -76,5 +76,11 @@ struct ProductCardView: View {
         .frame(width: width)
         .background(DSColors.background)
         .contentShape(Rectangle())
+        .errorAlert(
+            message: cart.errorMessage,
+            onDismiss: {
+                cart.clearErrorMessage()
+            }
+        )
     }
 }

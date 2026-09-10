@@ -15,6 +15,11 @@ typealias Category = Components.Schemas.Category
 
 typealias Review = Components.Schemas.Review
 
+struct IdentifiableAddress: Identifiable, Hashable {
+    let id: String
+    var address: Components.Schemas.Address
+}
+
 extension Category: Identifiable {}
 
 struct CartModel {

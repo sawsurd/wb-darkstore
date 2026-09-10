@@ -1,5 +1,6 @@
 import Foundation
 import OpenAPIURLSession
+import SwiftData
 
 struct CartProduct: Identifiable, Hashable {
     let id: String
@@ -14,11 +15,13 @@ struct CartProduct: Identifiable, Hashable {
 protocol CartServicing {
     func fetchProducts() async
     var productsInCart: [CartProduct] { get }
+    var errorMessage: String? { get }
     var cartQuantities: [String: Int] { get }
     func addProductToCart(id: String, productInfo: CartProduct?) async
     func removeProductFromCart(id: String) async
     func deleteProductFromCart(id: String) async
     func createOrder(paymentMethod: String, addressId: String) async
+    func clearErrorMessage()
 }
 
 extension CartServicing {
@@ -30,7 +33,8 @@ extension CartServicing {
 @Observable
 final class CartService: CartServicing {
     private let client: APIProtocol
-    private var errorMessage: String?
+    private let modelContainer: ModelContainer
+    public var errorMessage: String?
     private var isFetching = false
     
     public private(set) var cartQuantities: [String: Int] = [:]
@@ -52,7 +56,9 @@ final class CartService: CartServicing {
         .sorted { $0.id < $1.id }
     }
 
-    init() {
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
+
         do {
             client = Client(
                 serverURL: try Servers.Server1.url(),
@@ -62,6 +68,8 @@ final class CartService: CartServicing {
         } catch {
             fatalError("Не удалось создать URL сервера: \(error)")
         }
+
+        loadLocalCart()
     }
     
     public func fetchProducts() async {
@@ -97,9 +105,8 @@ final class CartService: CartServicing {
                     self.cartQuantities = newQuantities
                 }
                 self.productDetails = newDetails
-                if self.errorMessage != nil {
-                    self.errorMessage = nil
-                }
+                saveLocalCart()
+                clearErrorMessage()
 
             case .unauthorized(let error):
                 let message = try? error.body.json.error
@@ -122,35 +129,39 @@ final class CartService: CartServicing {
             productDetails[id] = productInfo
         }
 
+        saveLocalCart()
+
         do {
             let response = try await client.post_sol_cart_sol_items(query: .init(id: id))
 
             switch response {
             case .ok:
-                if self.errorMessage != nil {
-                    self.errorMessage = nil
-                }
+                clearErrorMessage()
                 if productDetails[id] == nil {
                     await fetchProducts()
                 }
 
             case .unauthorized(let error):
                 rollbackAdd(id: id, to: previousQuantity)
+                saveLocalCart()
                 let message = try? error.body.json.error
                 self.errorMessage = message ?? "Требуется авторизация"
 
             case .notFound(let error):
                 rollbackAdd(id: id, to: previousQuantity)
+                saveLocalCart()
                 let message = try? error.body.json.error
                 self.errorMessage = message ?? "Товар не найден"
 
             case .default(let statusCode, let error):
                 rollbackAdd(id: id, to: previousQuantity)
+                saveLocalCart()
                 let message = try? error.body.json.error
                 self.errorMessage = message ?? "Ошибка сервера (\(statusCode))"
             }
         } catch {
             rollbackAdd(id: id, to: previousQuantity)
+            saveLocalCart()
             self.errorMessage = "Ошибка сети: \(error.localizedDescription)"
         }
     }
@@ -161,6 +172,8 @@ final class CartService: CartServicing {
         } else {
             cartQuantities.removeValue(forKey: id)
         }
+        
+        saveLocalCart()
     }
     
     public func removeProductFromCart(id: String) async {
@@ -180,27 +193,30 @@ final class CartService: CartServicing {
 
             switch response {
             case .ok:
-                if self.errorMessage != nil {
-                    self.errorMessage = nil
-                }
+                saveLocalCart()
+                clearErrorMessage()
 
             case .unauthorized(let error):
                 cartQuantities[id] = currentQuantity
+                saveLocalCart()
                 let message = try? error.body.json.error
                 self.errorMessage = message ?? "Требуется авторизация"
 
             case .notFound(let error):
                 cartQuantities[id] = currentQuantity
+                saveLocalCart()
                 let message = try? error.body.json.error
                 self.errorMessage = message ?? "Товар не найден"
 
             case .default(let statusCode, let error):
                 cartQuantities[id] = currentQuantity
+                saveLocalCart()
                 let message = try? error.body.json.error
                 self.errorMessage = message ?? "Ошибка сервера (\(statusCode))"
             }
         } catch {
             cartQuantities[id] = currentQuantity
+            saveLocalCart()
             self.errorMessage = "Ошибка сети: \(error.localizedDescription)"
         }
     }
@@ -217,9 +233,7 @@ final class CartService: CartServicing {
             )
             switch response {
             case .ok(_):
-                if self.errorMessage != nil {
-                    self.errorMessage = nil
-                }
+                clearErrorMessage()
                 await fetchProducts()
                 
             case .default(let statusCode, let error):
@@ -294,13 +308,75 @@ final class CartService: CartServicing {
             cartQuantities[id] = remaining
         }
         
+        saveLocalCart()
+        
         if let firstFailureMessage = failures.compactMap({ outcome -> String? in
             if case .failure(let message) = outcome { return message }
             return nil
         }).first {
             self.errorMessage = firstFailureMessage
-        } else if self.errorMessage != nil {
-            self.errorMessage = nil
+        } else {
+            clearErrorMessage()
+        }
+    }
+    
+    private func loadLocalCart() {
+        let context = ModelContext(modelContainer)
+
+        do {
+            let items = try context.fetch(FetchDescriptor<CartItemModel>())
+
+            cartQuantities = [:]
+            productDetails = [:]
+
+            for item in items {
+                guard item.quantity > 0 else { continue }
+                cartQuantities[item.id] = item.quantity
+                productDetails[item.id] = CartProduct(
+                    id: item.id,
+                    image: item.image,
+                    name: item.name,
+                    weight: item.weight,
+                    price: item.price,
+                    quantity: item.quantity,
+                    isAvailable: item.isAvailable
+                )
+            }
+        } catch {
+            print("Ошибка загрузки локальной корзины: \(error)")
+        }
+    }
+    
+    private func saveLocalCart() {
+        let context = ModelContext(modelContainer)
+
+        do {
+            let existingItems = try context.fetch(FetchDescriptor<CartItemModel>())
+            for item in existingItems {
+                context.delete(item)
+            }
+
+            for product in productsInCart {
+                let item = CartItemModel(
+                    id: product.id,
+                    image: product.image,
+                    name: product.name,
+                    weight: product.weight,
+                    price: product.price,
+                    quantity: product.quantity,
+                    isAvailable: product.isAvailable
+                )
+                context.insert(item)
+            }
+            try context.save()
+        } catch {
+            print("Ошибка сохранения корзины: \(error)")
+        }
+    }
+    
+    public func clearErrorMessage() {
+        if errorMessage != nil {
+            errorMessage = nil
         }
     }
 }

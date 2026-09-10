@@ -16,6 +16,7 @@ protocol ProductServicing {
     func toggleFavorite(id: String) async
     func isFavorite(id: String) -> Bool
     func addReviewToProduct(productId: String ,rating: Int, comment: String, images: [String]) async -> Product?
+    func clearError()
 }
 
 @Observable
@@ -221,8 +222,7 @@ final class ProductService: ProductServicing {
         }
     }
     
-    @MainActor
-    private func clearError() {
+    public func clearError() {
         if errorMessage != nil {
             errorMessage = nil
         }

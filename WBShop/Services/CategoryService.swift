@@ -3,13 +3,16 @@ import OpenAPIURLSession
 
 protocol CategoryServicing {
     func fetchCategories() async
+    var errorMessage: String? { get }
     var categories: [Category] { get }
+    func clearErrorMessage()
+
 }
 
 @Observable
 final class CategoryService: CategoryServicing {
     private let client: APIProtocol
-    private var errorMessage: String?
+    public var errorMessage: String?
     public private(set) var categories: [Category] = []
     private var isFetching = false
 
@@ -37,9 +40,7 @@ final class CategoryService: CategoryServicing {
             case .ok(let okResponse):
                 let body = try okResponse.body.json
                 self.categories = body
-                if self.errorMessage != nil {
-                    self.errorMessage = nil
-                }
+                clearErrorMessage()
 
             case .unauthorized(let error):
                 let message = try? error.body.json.error
@@ -51,6 +52,12 @@ final class CategoryService: CategoryServicing {
             }
         } catch {
             self.errorMessage = "Ошибка сети: \(error.localizedDescription)"
+        }
+    }
+    
+    public func clearErrorMessage() {
+        if errorMessage != nil {
+            errorMessage = nil
         }
     }
 }

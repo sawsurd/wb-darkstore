@@ -35,6 +35,12 @@ struct ContentView: View {
                 .presentationDetents([.large])
                 .presentationCornerRadius(DSRadius.sheet)
         }
+        .errorAlert(
+            message: productService.errorMessage,
+            onDismiss: {
+                productService.clearError()
+            }
+        )
     }
 }
 
