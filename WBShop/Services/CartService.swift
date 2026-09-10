@@ -128,7 +128,7 @@ final class CartService: CartServicing {
         if productDetails[id] == nil, let productInfo {
             productDetails[id] = productInfo
         }
-        
+
         saveLocalCart()
 
         do {
