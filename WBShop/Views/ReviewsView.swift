@@ -207,7 +207,8 @@ struct AddReviewView: View {
     @State private var comment: String = ""
     @State private var images: [String] = []
     @State private var isSubmitting = false
-    
+    @State private var isReviewSuccessPresented = false
+
     var body: some View {
         ZStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DSSpacing.lg) {
@@ -303,6 +304,21 @@ struct AddReviewView: View {
             .padding(.horizontal, DSSpacing.lg)
             .padding(.top, DSSpacing.lg)
         }
+        .fullScreenCover(isPresented: $isReviewSuccessPresented) {
+            DSSuccessScreen(
+                title: "Отзыв\nотправлен",
+                subtitle: "Спасибо!\nСкоро мы его опубликуем",
+                buttonTitle: "Закрыть",
+                onClose: {
+                    isReviewSuccessPresented = false
+                    onDismiss()
+                },
+                onAction: {
+                    isReviewSuccessPresented = false
+                    onDismiss()
+                }
+            )
+        }
         .errorAlert(
             message: productService.errorMessage,
             onDismiss: {
@@ -314,7 +330,7 @@ struct AddReviewView: View {
     private func submitReview() async {
         isSubmitting = true
         defer { isSubmitting = false }
-        
+
         if let updated = await productService.addReviewToProduct(
             productId: product.id,
             rating: rating,
@@ -322,7 +338,7 @@ struct AddReviewView: View {
             images: images
         ) {
             onReviewAdded(updated)
-            onDismiss()
+            isReviewSuccessPresented = true
         } else {
             showError = true
         }

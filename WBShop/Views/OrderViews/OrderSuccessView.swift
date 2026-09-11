@@ -18,3 +18,21 @@ struct OrderSuccessView: View {
         )
     }
 }
+
+struct reviewSuccessView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        DSSuccessScreen(
+            title: "Отзыв\nотправлен",
+            subtitle: "Спасибо!\nСкоро мы его опубликуем",
+            buttonTitle: "Закрыть",
+            onClose: {
+                dismiss()
+            },
+            onAction: {
+                dismiss()
+            }
+        )
+    }
+}

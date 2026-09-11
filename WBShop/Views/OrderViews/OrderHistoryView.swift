@@ -43,11 +43,13 @@ struct OrderHistoryItem: View {
                     VStack(alignment: .leading) {
                         HStack {
                             Text("\(order.totalPrice)₽")
+                                .foregroundStyle(DSColors.black)
                             Text("\(order.totalItems) товар\(pluralSuffix(order.totalItems))")
                                 .foregroundStyle(DSColors.secondary)
                         }
                         .font(DSTypography.priceBold.weight(.semibold))
                         Text(order.deliveryDate ?? "")
+                            .foregroundStyle(DSColors.black)
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -60,6 +62,5 @@ struct OrderHistoryItem: View {
             .background(DSColors.smoky)
             .cornerRadius(DSRadius.lg)
         }
-        .buttonStyle(.plain)
     }
 }

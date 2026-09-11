@@ -123,14 +123,7 @@ struct ProductCardView: View {
                     .padding(.horizontal, DSSpacing.md)
                     .padding(.vertical, DSSpacing.sm)
                     .background(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.88, green: 0.18, blue: 0.92),
-                                Color(red: 0.45, green: 0.05, blue: 0.98)
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+                        LinearGradient.figmaPurplePink
                     )
                     .cornerRadius(DSRadius.md)
                     .transition(.scale.combined(with: .opacity))

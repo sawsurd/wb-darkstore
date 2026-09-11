@@ -156,8 +156,9 @@ struct CartView: View {
                     ) {
                         Task { await placeOrder() }
                     }
+                    .buttonStyle(.plain)
                     .disabled(cart.productsInCart.isEmpty || hasUnavailableProducts || userService.addresses.isEmpty || isPlacingOrder)
-                    .opacity((hasUnavailableProducts || userService.addresses.isEmpty) ? 0.5 : 1)
+                    .opacity((hasUnavailableProducts || userService.addresses.isEmpty || cart.productsInCart.isEmpty) ? 0.5 : 1)
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
                 }
