@@ -15,7 +15,6 @@ struct OrderHistoryView: View {
                     }
                 }
             }
-            .padding(DSSpacing.lg)
         }
         .task {
             await service.getOrders()

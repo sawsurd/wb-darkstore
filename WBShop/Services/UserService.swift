@@ -15,6 +15,10 @@ protocol UserServicing {
     func deleteAddress(id: String) async
     func clearErrorMessage()
     func getOrders() async
+    func getProfileInfo() async -> User
+    func editProfile(_ user: User) async -> Bool
+    func logout() async -> Bool
+    func deleteAccount() async -> Bool
 }
 
 @Observable
@@ -60,6 +64,25 @@ final class UserService: UserServicing {
             handleNetworkError(error)
         }
         return "Гость"
+    }
+
+    func getProfileInfo() async -> User {
+        do {
+            let response = try await client.get_sol_users_sol_me(.init())
+            switch response {
+            case .ok(let okResponse):
+                let profile = try okResponse.body.json
+                clearErrorMessage()
+                return profile
+            case .unauthorized(let error):
+                handleError(try? error.body.json.error, default: "Требуется авторизация")
+            case .default(let statusCode, let error):
+                handleError(try? error.body.json.error, default: "Ошибка сервера (\(statusCode))")
+            }
+        } catch {
+            handleNetworkError(error)
+        }
+        return User(name: "noname", phone: "", birthday: "")
     }
 
     func getAddresses() async {
@@ -180,5 +203,68 @@ final class UserService: UserServicing {
         } catch {
             handleNetworkError(error)
         }
+    }
+
+    func editProfile(_ user: User) async -> Bool {
+        do {
+            let payload = Operations.put_sol_users_sol_me.Input.Body.jsonPayload(
+                name: user.name,
+                birthday: user.birthday,
+                imageUri: ""
+            )
+            let response = try await client.put_sol_users_sol_me(
+                body: .json(payload)
+            )
+            switch response {
+            case .ok:
+                clearErrorMessage()
+                return true
+            case .badRequest:
+                handleError(nil, default: "Ошибка валидации входных данных")
+            case .unauthorized:
+                handleError(nil, default: "Требуется авторизация")
+            case .default(let statusCode, _):
+                handleError(nil, default: "Ошибка сервера (\(statusCode))")
+            }
+        } catch {
+            handleNetworkError(error)
+        }
+        return false
+    }
+
+    func logout() async -> Bool {
+        do {
+            let response = try await client.post_sol_logout(.init())
+            switch response {
+            case .ok:
+                clearErrorMessage()
+                return true
+            case .unauthorized(let error):
+                handleError(try? error.body.json.error, default: "Требуется авторизация")
+            case .default(let statusCode, let error):
+                handleError(try? error.body.json.error, default: "Ошибка сервера (\(statusCode))")
+            }
+        } catch {
+            handleNetworkError(error)
+        }
+        return false
+    }
+
+    func deleteAccount() async -> Bool {
+        do {
+            let response = try await client.delete_sol_users_sol_me(.init())
+            switch response {
+            case .ok:
+                clearErrorMessage()
+                return true
+            case .unauthorized(let error):
+                handleError(try? error.body.json.error, default: "Требуется авторизация")
+            case .default(let statusCode, let error):
+                handleError(try? error.body.json.error, default: "Ошибка сервера (\(statusCode))")
+            }
+        } catch {
+            handleNetworkError(error)
+        }
+        return false
     }
 }

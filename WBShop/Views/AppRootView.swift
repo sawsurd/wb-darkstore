@@ -42,6 +42,8 @@ struct AppRootView: View {
                     CategoryProductsView(categoryId: id, categoryName: name)
                 case .profile:
                     ProfileView()
+                case .profileEdit:
+                    ProfileEditView()
                 }
             }
         }
