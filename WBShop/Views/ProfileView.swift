@@ -12,53 +12,55 @@ struct ProfileView: View {
         }
 
     var body: some View {
-        VStack(alignment: .leading) {
-            Button {
-                router.push(.profileEdit)
-            } label: {
-                HStack(spacing: DSSpacing.md) {
-                    ZStack {
-                        Circle()
-                            .fill(DSColors.disabled.opacity(0.4))
-                            .frame(width: 56, height: 56)
-                        Text(initials)
-                            .font(DSTypography.headline)
-                            .foregroundColor(DSColors.black)
-                    }
-
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(user?.name.isEmpty == false ? user!.name : "Нет имени")
-                            .font(DSTypography.body.weight(.semibold))
-                            .foregroundColor(DSColors.black)
-
-                        HStack {
-                            Text(user?.phone.isEmpty == false ? user!.phone : "Нет номера телефона")
-                                .font(DSTypography.caption)
+        ScrollView {
+            VStack(alignment: .leading) {
+                Button {
+                    router.push(.profileEdit)
+                } label: {
+                    HStack(spacing: DSSpacing.md) {
+                        ZStack {
+                            Circle()
+                                .fill(DSColors.disabled.opacity(0.4))
+                                .frame(width: 56, height: 56)
+                            Text(initials)
+                                .font(DSTypography.headline)
                                 .foregroundColor(DSColors.black)
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(DSColors.secondary)
                         }
+                        
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(user?.name.isEmpty == false ? user!.name : "Нет имени")
+                                .font(DSTypography.body.weight(.semibold))
+                                .foregroundColor(DSColors.black)
+                            
+                            HStack {
+                                Text(user?.phone.isEmpty == false ? user!.phone : "Нет номера телефона")
+                                    .font(DSTypography.caption)
+                                    .foregroundColor(DSColors.black)
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(DSColors.secondary)
+                            }
+                        }
+                        Spacer()
+                        
                     }
-                    Spacer()
-
                 }
+                .padding(.top, DSSpacing.sm)
+                
+                Text("История заказов")
+                    .font(DSTypography.order.weight(.regular))
+                    .padding(.top, DSSpacing.lg)
+                
+                OrderHistoryView()
             }
-            .padding(.top, DSSpacing.sm)
-
-            Text("История заказов")
-                .font(DSTypography.order.weight(.regular))
-                .padding(.top, DSSpacing.lg)
-
-            OrderHistoryView()
+            .padding(DSSpacing.lg)
+            .task {
+                user = await userService.getProfileInfo()
+            }
+            .background(DSColors.background)
+            .navigationTitle("Профиль")
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .padding(DSSpacing.lg)
-        .task {
-            user = await userService.getProfileInfo()
-        }
-        .background(DSColors.background)
-        .navigationTitle("Профиль")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
