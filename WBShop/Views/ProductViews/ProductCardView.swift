@@ -10,45 +10,69 @@ struct ProductCardView: View {
     private var imageHeight: CGFloat {
         width * (256.0 / /*174*/ 256.0)
     }
-    
+
+    private var quantity: Int {
+        cart.cartQuantities[product.id] ?? 0
+    }
+
+    private var totalPrice: Int {
+        Int(product.price) * quantity
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: DSSpacing.sm) {
-            if let imageUrl = URL(string: product.image) {
-                CachedAsyncImage(url: imageUrl) { phase in
-                    switch phase {
-                    case .empty:
-                        ProgressView()
-                            .frame(width: width, height: imageHeight)
-                            .background(Color(.systemGray6))
-                        
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: width, height: imageHeight)
-                        
-                    case .failure:
-                        Image(systemName: "photo")
-                            .font(.largeTitle)
-                            .foregroundColor(.gray)
-                            .frame(width: width, height: imageHeight)
-                            .background(Color(.systemGray5))
-                        
-                    @unknown default:
-                        EmptyView()
+            ZStack {
+                if let imageUrl = URL(string: product.image) {
+                    CachedAsyncImage(url: imageUrl) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                                .frame(width: width, height: imageHeight)
+                                .background(DSColors.secondary)
+
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: width, height: imageHeight)
+
+                        case .failure:
+                            Image(systemName: "photo")
+                                .font(.largeTitle)
+                                .foregroundColor(DSColors.secondary)
+                                .frame(width: width, height: imageHeight)
+                                .background(Color(.systemGray5))
+
+                        @unknown default:
+                            EmptyView()
+                        }
                     }
-                }
-                .clipped()
-                .cornerRadius(DSRadius.xl)
-            } else {
-                Image(systemName: "photo")
-                    .font(.largeTitle)
-                    .foregroundColor(.gray)
-                    .frame(width: width, height: imageHeight)
-                    .background(Color(.systemGray5))
+                    .clipped()
                     .cornerRadius(DSRadius.xl)
+                } else {
+                    Image(systemName: "photo")
+                        .font(.largeTitle)
+                        .foregroundColor(DSColors.secondary)
+                        .frame(width: width, height: imageHeight)
+                        .background(Color(.systemGray5))
+                        .cornerRadius(DSRadius.xl)
+                }
+
+                if quantity >= 1 {
+                    Rectangle()
+                        .fill(Color(DSColors.secondary))
+                        .frame(width: width, height: imageHeight)
+                        .opacity(0.5)
+                        .cornerRadius(DSRadius.xl)
+                        .transition(.scale.combined(with: .opacity))
+                    Text("\(quantity)")
+                        .font(DSTypography.display.weight(.bold))
+                        .foregroundStyle(DSColors.white)
+                }
             }
-            
+            .animation(.spring(response: 0.3, dampingFraction: 0.75), value: quantity)
+
+
             HStack {
                 Text(product.name)
                     .font(DSTypography.caption)
@@ -63,15 +87,68 @@ struct ProductCardView: View {
             }
             
             HStack {
-                DSButton(title: "\(Int(product.price)) ₽",
-                    style: .lightPurple,
-                    size: .compact,
-                    icon: Image("plus")) {
-                    Task {
-                        await cart.addProductToCart(id: product.id)
+                if quantity > 0 {
+                    HStack(spacing: DSSpacing.sm) {
+                        Button {
+                            Task {
+                                await cart.removeProductFromCart(id: product.id)
+                            }
+                        } label: {
+                            Image(systemName: "minus")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                                .contentShape(Rectangle())
+                        }
+
+
+                        Text("\(totalPrice) ₽")
+                            .font(DSTypography.caption)
+                            .bold()
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+
+
+                        Button {
+                            Task {
+                                await cart.addProductToCart(id: product.id)
+                            }
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                                .contentShape(Rectangle())
+                        }
+
                     }
+                    .padding(.horizontal, DSSpacing.md)
+                    .padding(.vertical, DSSpacing.sm)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.88, green: 0.18, blue: 0.92),
+                                Color(red: 0.45, green: 0.05, blue: 0.98)
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(DSRadius.md)
+                    .transition(.scale.combined(with: .opacity))
+                } else {
+                    DSButton(
+                        title: "\(Int(product.price)) ₽",
+                        style: .lightPurple,
+                        size: .compact,
+                        icon: Image(systemName: "plus")
+                    ) {
+                        Task {
+                            await cart.addProductToCart(id: product.id)
+                        }
+                    }
+                    .transition(.scale.combined(with: .opacity))
                 }
             }
+            .animation(.spring(response: 0.3, dampingFraction: 0.75), value: quantity)
         }
         .frame(width: width)
         .background(DSColors.background)
