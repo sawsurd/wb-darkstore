@@ -13,29 +13,37 @@ struct ContentView: View {
     @State private var selectedProduct: ProductPreview?
 
     var body: some View {
-        HStack {
-            Spacer()
-            Button {
-                router.push(.profile)
-            } label: {
-                Image(systemName: "person.fill")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(DSColors.black)
-                    .frame(width: 36, height: 36)
-                    .background(DSColors.lightPurple)
-                    .clipShape(Circle())
+        VStack(spacing: DSSpacing.md) {
+            HStack(spacing: DSSpacing.md) {
+                AddressSelectorView()
+
+                Button {
+                    router.push(.profile)
+                } label: {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(DSColors.black)
+                        .frame(width: 36, height: 36)
+                        .background(DSColors.lightPurple)
+                        .clipShape(Circle())
+                }
             }
+            .padding(.horizontal, DSSpacing.md)
+            .padding(.vertical, DSSpacing.sm)
+            .background(DSColors.smoky)
+            .cornerRadius(DSRadius.xl)
+            .padding(.horizontal, DSSpacing.lg)
+
+            ProductGridView(
+                products: productService.products,
+                onSelectProduct: { selectedProduct = $0 },
+                isFavorite: { productService.isFavorite(id: $0) },
+                onToggleFavorite: { product in
+                    Task { await productService.toggleFavorite(id: product.id) }
+                }
+            )
+            .background(DSColors.surface)
         }
-        .padding()
-        ProductGridView(
-            products: productService.products,
-            onSelectProduct: { selectedProduct = $0 },
-            isFavorite: { productService.isFavorite(id: $0) },
-            onToggleFavorite: { product in
-                Task { await productService.toggleFavorite(id: product.id) }
-            }
-        )
-        .background(DSColors.surface)
         .task {
             await productService.fetchProducts()
         }

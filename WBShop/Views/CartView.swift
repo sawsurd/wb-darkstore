@@ -8,9 +8,7 @@ struct CartView: View {
     let onDismiss: () -> Void
     @Injected var cart: CartServicing
     @Injected private var userService: UserServicing
-    @State private var selectedAddressId: String?
-    @AppStorage("selectedAddressId") private var savedSelectedAddressId = ""
-    @State private var isShowingAddressSelection = false
+    @AppStorage("selectedAddressId") private var selectedAddressId = ""
     @State private var orderToShow: Order?
     @State private var isPlacingOrder = false
     @State private var isOrderSuccessPresented = false
@@ -21,26 +19,6 @@ struct CartView: View {
     
     private var totalProductsCount: Int {
         cart.productsInCart.reduce(0) { $0 + $1.quantity }
-    }
-
-    private var selectedAddress: IdentifiableAddress? {
-        if let selectedId = selectedAddressId {
-            return userService.addresses.first(where: { $0.id == selectedId })
-        }
-        return userService.addresses.first
-    }
-
-    private var currentAddressLine: String {
-        selectedAddress?.address.addressLine ?? "Добавить адрес доставки"
-    }
-
-    private var currentAddressDetails: String {
-        guard let address = selectedAddress?.address else { return "" }
-        var parts: [String] = []
-        if let floor = address.floor, !floor.isEmpty { parts.append("\(floor) этаж") }
-        if let entrance = address.entrance, !entrance.isEmpty { parts.append("\(entrance) подъезд") }
-        if let code = address.intercomCode, !code.isEmpty { parts.append("код домофона \(code)") }
-        return parts.joined(separator: ", ")
     }
 
     var body: some View {
@@ -83,30 +61,8 @@ struct CartView: View {
                     }
                     
                     VStack(spacing: DSSpacing.xl) {
-                        Button {
-                            isShowingAddressSelection = true
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(currentAddressLine)
-                                        .font(DSTypography.bodyBold)
-                                        .foregroundColor(DSColors.black)
-                                        .lineLimit(1)
-                                    if !currentAddressDetails.isEmpty {
-                                        Text(currentAddressDetails)
-                                            .font(DSTypography.caption)
-                                            .foregroundColor(DSColors.black)
-                                            .lineLimit(1)
-                                    }
-                                }
-                                Image(systemName: "chevron.right")
-                                    .font(DSTypography.bodyBold)
-                                    .foregroundColor(DSColors.black)
-                                Spacer()
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        
+                        AddressSelectorView()
+
                         HStack {
                             Text("Оплата картой")
                                 .font(DSTypography.priceBold)
@@ -168,18 +124,6 @@ struct CartView: View {
         }
         .task {
             await cart.fetchProducts()
-            await userService.getAddresses()
-
-            if let savedAddress = userService.addresses.first(
-                where: { $0.id == savedSelectedAddressId }
-            ) {
-                selectedAddressId = savedAddress.id
-            } else if let firstAddress = userService.addresses.first {
-                selectedAddressId = firstAddress.id
-            }
-        }
-        .sheet(isPresented: $isShowingAddressSelection) {
-            AddressesSelectionListView(selectedAddressId: $selectedAddressId)
         }
         .fullScreenCover(isPresented: $isOrderSuccessPresented) {
             DSSuccessScreen(
@@ -204,11 +148,6 @@ struct CartView: View {
                 onDismiss()
             }
         }
-        .onChange(of: selectedAddressId) { _, newValue in
-            guard let newValue else { return }
-
-            savedSelectedAddressId = newValue
-        }
         .errorAlert(
             message: cart.errorMessage,
             onDismiss: {
@@ -224,7 +163,8 @@ struct CartView: View {
     }
 
     private func placeOrder() async {
-        guard let addressIdToUse = selectedAddressId ?? userService.addresses.first?.id else { return }
+        let addressIdToUse = selectedAddressId.isEmpty ? userService.addresses.first?.id : selectedAddressId
+        guard let addressIdToUse else { return }
 
         isPlacingOrder = true
         defer { isPlacingOrder = false }
