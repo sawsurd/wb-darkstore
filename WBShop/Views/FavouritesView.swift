@@ -56,11 +56,14 @@ struct FavoriteButton: View {
         Button(action: action) {
             Image(systemName: isFavorite ? "heart.fill" : "heart")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(isFavorite ? .red : .white)
+                .foregroundColor(isFavorite ? Color(red: 227/255, green: 19/255, blue: 191/255) : DSColors.white)
+                .scaleEffect(isFavorite ? 1.15 : 1.0)
                 .padding(8)
                 .background(.black.opacity(0.35))
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
+        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isFavorite)
+        .sensoryFeedback(.impact(weight: .light), trigger: isFavorite)
     }
 }

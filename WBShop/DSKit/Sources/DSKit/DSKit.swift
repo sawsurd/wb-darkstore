@@ -66,6 +66,7 @@ public enum DSButtonStyle {
     case destructive
     case gradient
     case lightPurple
+    case white
 
     var background: AnyShapeStyle {
         switch self {
@@ -79,16 +80,28 @@ public enum DSButtonStyle {
             return AnyShapeStyle(LinearGradient.figmaPurplePink)
         case .lightPurple:
             return AnyShapeStyle(LinearGradient.figmaLightPinkPurple)
+        case .white:
+            return AnyShapeStyle(DSColors.white)
         }
     }
 
     var foregroundColor: Color {
         switch self {
         case .secondary,
-             .lightPurple:
+                .lightPurple,
+                .white:
             return .black
         default:
             return .white
+        }
+    }
+    
+    var outline: Color {
+        switch self {
+        case .white:
+            return DSColors.lightPurple
+        default:
+            return .clear
         }
     }
 }
@@ -97,6 +110,7 @@ public enum DSButtonSize {
     case compact
     case regular
     case medium
+    case downloadReceipt
     var font: Font {
         switch self {
         case .compact:
@@ -104,6 +118,8 @@ public enum DSButtonSize {
         case .regular:
             return DSTypography.bodyBold
         case .medium:
+            return DSTypography.order
+        case .downloadReceipt:
             return DSTypography.order
         }
     }
@@ -116,6 +132,8 @@ public enum DSButtonSize {
             return DSSpacing.xl
         case .medium:
             return 130
+        case .downloadReceipt:
+            return DSSpacing.lg
         }
     }
     var verticalPadding: CGFloat {
@@ -124,7 +142,7 @@ public enum DSButtonSize {
             return DSSpacing.sm
         case .regular:
             return 14
-        case .medium:
+        case .medium, .downloadReceipt:
             return 13
         }
     }
@@ -134,7 +152,7 @@ public enum DSButtonSize {
             return DSRadius.sm
         case .regular:
             return DSRadius.lg
-        case .medium:
+        case .medium, .downloadReceipt:
             return DSRadius.lg
         }
     }
@@ -172,6 +190,7 @@ public struct DSButton: View {
                 }
                 Text(title)
                     .font(size.font)
+                    .lineLimit(1)
                 if let icon {
                     icon
                 }
@@ -185,6 +204,10 @@ public struct DSButton: View {
             .frame(maxWidth: fillWidth ? .infinity : nil)
             .background(style.background)
             .cornerRadius(size.cornerRadius)
+            .overlay(
+                RoundedRectangle(cornerRadius: size.cornerRadius)
+                    .stroke(style.outline, lineWidth: style.outline == .clear ? 0 : 2)
+            )
         }
     }
 }
@@ -260,6 +283,9 @@ public enum DSColors {
     public static let disabled = Color.gray.opacity(0.4)
     public static let black = Color.black
     public static let blue = Color.blue
+    public static let white = Color.white
+    public static let lightPurple = Color.purple.opacity(0.1)
+    public static let smoky = Color(hex: "F6F6FA")
 }
 
 public enum DSSpacing {
@@ -284,6 +310,7 @@ public enum DSRadius {
 
 public enum DSTypography {
     public static let display = Font.custom("Inter", size: 32)
+    public static let success = Font.custom("Inter", size: 56).weight(.semibold)
     public static let title = Font.custom("Inter", size: 26).weight(.semibold)
     public static let headline = Font.custom("Inter", size: 24).weight(.bold)
     public static let body = Font.custom("Inter", size: 16)
@@ -365,4 +392,76 @@ public struct DSPriceText: View {
 
         return "\(string) ₽"
     }
+}
+
+public struct DSSuccessScreen: View {
+    public let title: String
+    public let subtitle: String
+    public let buttonTitle: String
+    public let onClose: () -> Void
+    public let onAction: () -> Void
+
+    public init(
+        title: String,
+        subtitle: String,
+        buttonTitle: String = "Закрыть",
+        onClose: @escaping () -> Void,
+        onAction: @escaping () -> Void
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.buttonTitle = buttonTitle
+        self.onClose = onClose
+        self.onAction = onAction
+    }
+
+    public var body: some View {
+        ZStack {
+            LinearGradient.figmaPurplePink
+                .ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Spacer()
+                    Button(action: onClose) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(DSSpacing.lg)
+                    }
+                }
+
+                Spacer()
+
+                Image("checkmark", bundle: .module)
+                    .padding(.bottom, DSSpacing.xl)
+
+                Text(title)
+                    .font(DSTypography.success)
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.leading)
+                    .padding(.bottom, DSSpacing.md)
+
+                Text(subtitle)
+                    .font(DSTypography.order)
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.leading)
+                    .padding(.bottom, 40)
+
+                DSButton(
+                    title: buttonTitle,
+                    style: .white,
+                    size: .medium,
+                    fillWidth: true,
+                    action: onAction
+                )
+                .padding(.bottom, DSSpacing.xxl)
+            }
+            .padding(.horizontal, DSSpacing.md)
+        }
+    }
+}
+
+#Preview {
+    DSSuccessScreen(title: "Заказ оформлен", subtitle: "Товары уже в процессе сборки, скоро привезём!", buttonTitle: "Закрыть", onClose: {print()}, onAction: {print()})
 }

@@ -5,6 +5,8 @@ public enum Route: Hashable {
     case login
     case search
     case category(id: String, name: String)
+    case profile
+    case profileEdit
 }
 
 public protocol RouterProtocol: AnyObject {

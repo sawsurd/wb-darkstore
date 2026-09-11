@@ -57,7 +57,7 @@ struct CategoryCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DSSpacing.xs) {
 
-            AsyncImage(url: URL(string: category.image)) { phase in
+            CachedAsyncImage(url: URL(string: category.image)) { phase in
                 switch phase {
 
                 case .success(let image):

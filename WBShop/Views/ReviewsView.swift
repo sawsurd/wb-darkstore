@@ -30,11 +30,20 @@ struct RatingStarsView: View {
     }
 }
 
+enum ReviewSortOption: String, CaseIterable, Identifiable {
+    case newest = "Сначала новые"
+    case oldest = "Сначала старые"
+    case highestRating = "С высоким рейтингом"
+    case lowestRating = "С низким рейтингом"
+
+    var id: String { rawValue }
+}
 
 struct ReviewsView: View {
     @State private var product: Product
     let onDismiss: () -> Void
     @State private var showAddReview = false
+    @State private var selectedSortOption: ReviewSortOption = .newest
     private var averageRating: Double {
         let count = product.reviews?.count ?? 0
 
@@ -48,6 +57,21 @@ struct ReviewsView: View {
 
         return Double(totalRating) / Double(count)
     }
+
+    private var sortedReviews: [Review] {
+            guard let reviews = product.reviews else { return [] }
+
+            switch selectedSortOption {
+            case .newest:
+                return reviews.sorted { $0.createdAt > $1.createdAt }
+            case .oldest:
+                return reviews.sorted { $0.createdAt < $1.createdAt }
+            case .highestRating:
+                return reviews.sorted { $0.rating > $1.rating }
+            case .lowestRating:
+                return reviews.sorted { $0.rating < $1.rating }
+            }
+        }
 
     init(product: Product, onDismiss: @escaping () -> Void) {
         self._product = State(initialValue: product)
@@ -83,7 +107,39 @@ struct ReviewsView: View {
                             showAddReview = true
                         }
 
-                        ForEach(product.reviews ?? [], id: \.self) { review in
+                        if count > 1 {
+                            HStack {
+                                Text("Сортировка:")
+                                    .font(DSTypography.body)
+                                    .foregroundStyle(DSColors.secondary)
+
+                                Menu {
+                                    Picker("Сортировка", selection: $selectedSortOption) {
+                                        ForEach(ReviewSortOption.allCases) { option in
+                                            Text(option.rawValue).tag(option)
+                                        }
+                                    }
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Text(selectedSortOption.rawValue)
+                                            .font(DSTypography.body)
+                                            .foregroundStyle(DSColors.black)
+                                        Image(systemName: "chevron.down")
+                                            .font(.caption)
+                                            .foregroundStyle(DSColors.secondary)
+                                    }
+                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, 10)
+                                    .background(DSColors.secondary.opacity(0.1))
+                                    .cornerRadius(8)
+                                }
+
+                                Spacer()
+                            }
+                            .padding(.vertical, DSSpacing.xs)
+                        }
+
+                        ForEach(sortedReviews, id: \.self) { review in
                             ReviewView(review: review)
                         }
                     }
@@ -151,7 +207,8 @@ struct AddReviewView: View {
     @State private var comment: String = ""
     @State private var images: [String] = []
     @State private var isSubmitting = false
-    
+    @State private var isReviewSuccessPresented = false
+
     var body: some View {
         ZStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DSSpacing.lg) {
@@ -161,7 +218,7 @@ struct AddReviewView: View {
                     .padding(.top, DSSpacing.lg)
                 
                 HStack(spacing: DSSpacing.md) {
-                    AsyncImage(url: URL(string: product.image)) { phase in
+                    CachedAsyncImage(url: URL(string: product.image)) { phase in
                         switch phase {
                         case .success(let image):
                             image
@@ -247,6 +304,21 @@ struct AddReviewView: View {
             .padding(.horizontal, DSSpacing.lg)
             .padding(.top, DSSpacing.lg)
         }
+        .fullScreenCover(isPresented: $isReviewSuccessPresented) {
+            DSSuccessScreen(
+                title: "Отзыв\nотправлен",
+                subtitle: "Спасибо!\nСкоро мы его опубликуем",
+                buttonTitle: "Закрыть",
+                onClose: {
+                    isReviewSuccessPresented = false
+                    onDismiss()
+                },
+                onAction: {
+                    isReviewSuccessPresented = false
+                    onDismiss()
+                }
+            )
+        }
         .errorAlert(
             message: productService.errorMessage,
             onDismiss: {
@@ -258,7 +330,7 @@ struct AddReviewView: View {
     private func submitReview() async {
         isSubmitting = true
         defer { isSubmitting = false }
-        
+
         if let updated = await productService.addReviewToProduct(
             productId: product.id,
             rating: rating,
@@ -266,7 +338,7 @@ struct AddReviewView: View {
             images: images
         ) {
             onReviewAdded(updated)
-            onDismiss()
+            isReviewSuccessPresented = true
         } else {
             showError = true
         }
