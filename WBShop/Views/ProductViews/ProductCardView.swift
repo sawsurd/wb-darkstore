@@ -8,7 +8,7 @@ struct ProductCardView: View {
     @Injected var cart: CartServicing
     
     private var imageHeight: CGFloat {
-        width * (256.0 / /*174*/ 256.0)
+        width
     }
 
     private var quantity: Int {

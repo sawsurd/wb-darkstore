@@ -36,6 +36,18 @@ struct OrderHistoryItem: View {
     let order: Order
     let onTap: () -> Void
 
+    private var formattedDeliveryDate: String {
+        guard let rawDate = order.deliveryDate, !rawDate.isEmpty else { return "" }
+
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        let date = isoFormatter.date(from: rawDate) ?? ISO8601DateFormatter().date(from: rawDate)
+
+        guard let validDate = date else { return rawDate }
+        return validDate.formatted(.dateTime.day(.twoDigits).month(.twoDigits).year())
+    }
+
     var body: some View {
         Button(action: onTap) {
             HStack(alignment: .top) {
@@ -48,8 +60,11 @@ struct OrderHistoryItem: View {
                                 .foregroundStyle(DSColors.secondary)
                         }
                         .font(DSTypography.priceBold.weight(.semibold))
-                        Text(order.deliveryDate ?? "")
-                            .foregroundStyle(DSColors.black)
+                        if !formattedDeliveryDate.isEmpty {
+                            Text(formattedDeliveryDate)
+                                .font(DSTypography.caption)
+                                .foregroundStyle(DSColors.secondary)
+                        }
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
