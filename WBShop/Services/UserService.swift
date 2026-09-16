@@ -178,7 +178,7 @@ final class UserService: UserServicing {
                 handleError(try? error.body.json.error, default: "Ошибка сервера (\(statusCode))")
             }
         } catch {
-            handleNetworkError(error)
+            handleError(nil, default: "Не удалось загрузить заказы")
         }
     }
 }

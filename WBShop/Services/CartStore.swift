@@ -14,8 +14,9 @@ actor CartStore {
     }
 
     private let client: APIProtocol
-    private let modelContainer: ModelContainer
+    private let persistence: CartPersistence
     private var isFetching = false
+    private var didLoadLocalCache = false
 
     private var cartQuantities: [String: Int] = [:]
     private var productDetails: [String: CartProduct] = [:]
@@ -37,7 +38,7 @@ actor CartStore {
     }
 
     init(modelContainer: ModelContainer) {
-        self.modelContainer = modelContainer
+        self.persistence = CartPersistence(modelContainer: modelContainer)
 
         do {
             client = try Client(
@@ -48,30 +49,38 @@ actor CartStore {
         } catch {
             fatalError("Не удалось создать URL сервера: \(error)")
         }
-
-        let loaded = Self.loadLocalCart(from: modelContainer)
-        cartQuantities = loaded.quantities
-        productDetails = loaded.details
     }
 
     private func snapshot(errorMessage: String? = nil) -> Snapshot {
         Snapshot(products: productsInCart, errorMessage: errorMessage)
     }
 
-    private func restoreQuantity(id: String, to quantity: Int) {
+    private func ensureLocalCacheLoaded() async {
+        guard !didLoadLocalCache else { return }
+        didLoadLocalCache = true
+
+        let loaded = await persistence.loadCart()
+        cartQuantities = loaded.quantities
+        productDetails = loaded.details
+    }
+
+    private func restoreQuantity(id: String, to quantity: Int) async {
         if quantity > 0 {
             cartQuantities[id] = quantity
         } else {
             cartQuantities.removeValue(forKey: id)
         }
-        saveLocalCart()
+        await persistence.saveCart(productsInCart)
     }
 
-    func currentSnapshot() -> Snapshot {
-        snapshot()
+    func currentSnapshot() async -> Snapshot {
+        await ensureLocalCacheLoaded()
+        return snapshot()
     }
 
     func fetchProducts() async -> Snapshot {
+        await ensureLocalCacheLoaded()
+
         guard !isFetching else {
             return snapshot()
         }
@@ -104,7 +113,7 @@ actor CartStore {
 
                 cartQuantities = newQuantities
                 productDetails = newDetails
-                saveLocalCart()
+                await persistence.saveCart(productsInCart)
                 return snapshot()
 
             case .unauthorized(let error):
@@ -119,6 +128,8 @@ actor CartStore {
     }
 
     func addProductToCart(id: String, productInfo: CartProduct?) async -> Snapshot {
+        await ensureLocalCacheLoaded()
+
         let previousQuantity = cartQuantities[id] ?? 0
         cartQuantities[id, default: 0] += 1
 
@@ -126,7 +137,7 @@ actor CartStore {
             productDetails[id] = productInfo
         }
 
-        saveLocalCart()
+        await persistence.saveCart(productsInCart)
 
         do {
             let response = try await client.post_sol_cart_sol_items(query: .init(id: id))
@@ -139,24 +150,26 @@ actor CartStore {
                 return snapshot()
 
             case .unauthorized(let error):
-                restoreQuantity(id: id, to: previousQuantity)
+                await restoreQuantity(id: id, to: previousQuantity)
                 return snapshot(errorMessage: error.errorMessage ?? "Требуется авторизация")
 
             case .notFound(let error):
-                restoreQuantity(id: id, to: previousQuantity)
+                await restoreQuantity(id: id, to: previousQuantity)
                 return snapshot(errorMessage: error.errorMessage ?? "Товар не найден")
 
             case .default(let statusCode, let error):
-                restoreQuantity(id: id, to: previousQuantity)
+                await restoreQuantity(id: id, to: previousQuantity)
                 return snapshot(errorMessage: error.errorMessage ?? "Ошибка сервера (\(statusCode))")
             }
         } catch {
-            restoreQuantity(id: id, to: previousQuantity)
+            await restoreQuantity(id: id, to: previousQuantity)
             return snapshot(errorMessage: "Ошибка сети: \(error.localizedDescription)")
         }
     }
 
     func removeProductFromCart(id: String) async -> Snapshot {
+        await ensureLocalCacheLoaded()
+
         guard let currentQuantity = cartQuantities[id], currentQuantity > 0 else {
             return snapshot()
         }
@@ -175,28 +188,30 @@ actor CartStore {
 
             switch response {
             case .ok:
-                saveLocalCart()
+                await persistence.saveCart(productsInCart)
                 return snapshot()
 
             case .unauthorized(let error):
-                restoreQuantity(id: id, to: currentQuantity)
+                await restoreQuantity(id: id, to: currentQuantity)
                 return snapshot(errorMessage: error.errorMessage ?? "Требуется авторизация")
 
             case .notFound(let error):
-                restoreQuantity(id: id, to: currentQuantity)
+                await restoreQuantity(id: id, to: currentQuantity)
                 return snapshot(errorMessage: error.errorMessage ?? "Товар не найден")
 
             case .default(let statusCode, let error):
-                restoreQuantity(id: id, to: currentQuantity)
+                await restoreQuantity(id: id, to: currentQuantity)
                 return snapshot(errorMessage: error.errorMessage ?? "Ошибка сервера (\(statusCode))")
             }
         } catch {
-            restoreQuantity(id: id, to: currentQuantity)
+            await restoreQuantity(id: id, to: currentQuantity)
             return snapshot(errorMessage: "Ошибка сети: \(error.localizedDescription)")
         }
     }
 
     func deleteProductFromCart(id: String) async -> Snapshot {
+        await ensureLocalCacheLoaded()
+
         guard let currentQuantity = cartQuantities[id], currentQuantity > 0 else {
             return snapshot()
         }
@@ -246,7 +261,7 @@ actor CartStore {
         if remaining > 0 {
             cartQuantities[id] = remaining
         }
-        saveLocalCart()
+        await persistence.saveCart(productsInCart)
 
         return snapshot(errorMessage: failures.first)
     }
@@ -277,64 +292,6 @@ actor CartStore {
             }
         } catch {
             return snapshot(errorMessage: "Ошибка сети: \(error.localizedDescription)")
-        }
-    }
-
-    private static func loadLocalCart(
-        from modelContainer: ModelContainer
-    ) -> (quantities: [String: Int], details: [String: CartProduct]) {
-        let context = ModelContext(modelContainer)
-
-        var quantities: [String: Int] = [:]
-        var details: [String: CartProduct] = [:]
-
-        do {
-            let items = try context.fetch(FetchDescriptor<CartItemModel>())
-
-            for item in items {
-                guard item.quantity > 0 else { continue }
-                quantities[item.id] = item.quantity
-                details[item.id] = CartProduct(
-                    id: item.id,
-                    image: item.image,
-                    name: item.name,
-                    weight: item.weight,
-                    price: item.price,
-                    quantity: item.quantity,
-                    isAvailable: item.isAvailable
-                )
-            }
-        } catch {
-            print("Ошибка загрузки локальной корзины: \(error)")
-        }
-
-        return (quantities, details)
-    }
-
-    private func saveLocalCart() {
-        let context = ModelContext(modelContainer)
-
-        do {
-            let existingItems = try context.fetch(FetchDescriptor<CartItemModel>())
-            for item in existingItems {
-                context.delete(item)
-            }
-
-            for product in productsInCart {
-                let item = CartItemModel(
-                    id: product.id,
-                    image: product.image,
-                    name: product.name,
-                    weight: product.weight,
-                    price: product.price,
-                    quantity: product.quantity,
-                    isAvailable: product.isAvailable
-                )
-                context.insert(item)
-            }
-            try context.save()
-        } catch {
-            print("Ошибка сохранения корзины: \(error)")
         }
     }
 }

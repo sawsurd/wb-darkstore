@@ -21,6 +21,7 @@ protocol CartServicing {
     func deleteProductFromCart(id: String) async
     func createOrder(paymentMethod: String, addressId: String) async
     func clearErrorMessage()
+    func loadInitialSnapshot() async
 }
 
 extension CartServicing {
@@ -43,9 +44,10 @@ final class CartService: CartServicing {
 
     init(modelContainer: ModelContainer) {
         store = CartStore(modelContainer: modelContainer)
-        Task {
-            apply(await store.currentSnapshot())
-        }
+    }
+
+    func loadInitialSnapshot() async {
+        await apply(await store.currentSnapshot())
     }
 
     func fetchProducts() async {
