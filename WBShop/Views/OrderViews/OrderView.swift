@@ -14,7 +14,7 @@ private struct OrderStatusPresentation {
             }
             return OrderStatusPresentation(title: "Доставлено", isDelivered: true)
         case .active:
-            return OrderStatusPresentation(title: "Доставляем ваш заказ", isDelivered: false)
+            return OrderStatusPresentation(title: "Доставим через N минут", isDelivered: false)
         }
     }
 }

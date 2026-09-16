@@ -12,6 +12,7 @@ struct CartView: View {
     @State private var orderToShow: Order?
     @State private var isPlacingOrder = false
     @State private var isOrderSuccessPresented = false
+    @State private var isInitialLoading = true
 
     private var hasUnavailableProducts: Bool {
         cart.productsInCart.contains { !$0.isAvailable }
@@ -35,7 +36,10 @@ struct CartView: View {
                 .padding(.top, DSSpacing.sm_md)
                 .padding(.horizontal, DSSpacing.md)
 
-                if cart.productsInCart.isEmpty {
+                if isInitialLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if cart.productsInCart.isEmpty {
                     ContentUnavailableView(
                         "Корзина пуста",
                         systemImage: "cart",
@@ -69,7 +73,29 @@ struct CartView: View {
                         }
 
                         VStack(spacing: DSSpacing.xl) {
-                            AddressSelectorView()
+                            Button {
+                                isShowingAddressSelection = true
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(currentAddressLine)
+                                            .font(DSTypography.bodyBold)
+                                            .foregroundColor(DSColors.black)
+                                            .lineLimit(1)
+                                        if !currentAddressDetails.isEmpty {
+                                            Text(currentAddressDetails)
+                                                .font(DSTypography.caption)
+                                                .foregroundColor(DSColors.black)
+                                                .lineLimit(1)
+                                        }
+                                    }
+                                    Image(systemName: "chevron.right")
+                                        .font(DSTypography.bodyBold)
+                                        .foregroundColor(DSColors.black)
+                                    Spacer()
+                                }
+                            }
+                            .buttonStyle(.plain)
 
                             HStack {
                                 Text("Оплата картой")
@@ -120,9 +146,8 @@ struct CartView: View {
                         ) {
                             Task { await placeOrder() }
                         }
-                        .buttonStyle(.plain)
                         .disabled(cart.productsInCart.isEmpty || hasUnavailableProducts || userService.addresses.isEmpty || isPlacingOrder)
-                        .opacity((hasUnavailableProducts || userService.addresses.isEmpty || cart.productsInCart.isEmpty) ? 0.5 : 1)
+                        .opacity((hasUnavailableProducts || userService.addresses.isEmpty) ? 0.5 : 1)
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
                     }
@@ -132,6 +157,9 @@ struct CartView: View {
             }
         }
         .task {
+            defer { isInitialLoading = false }
+
+            await cart.loadInitialSnapshot()
             await cart.fetchProducts()
         }
         .fullScreenCover(isPresented: $isOrderSuccessPresented) {
