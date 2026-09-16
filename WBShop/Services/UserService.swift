@@ -15,7 +15,7 @@ protocol UserServicing {
     func deleteAddress(id: String) async
     func clearErrorMessage()
     func getOrders() async
-    func getProfileInfo() async -> User
+    func getProfileInfo() async -> User?
     func editProfile(_ user: User) async -> Bool
     func logout() async -> Bool
     func deleteAccount() async -> Bool
@@ -66,7 +66,7 @@ final class UserService: UserServicing {
         return "Гость"
     }
 
-    func getProfileInfo() async -> User {
+    func getProfileInfo() async -> User? {
         do {
             let response = try await client.get_sol_users_sol_me(.init())
             switch response {
@@ -82,7 +82,7 @@ final class UserService: UserServicing {
         } catch {
             handleNetworkError(error)
         }
-        return User(name: "noname", phone: "", birthday: "")
+        return nil
     }
 
     func getAddresses() async {
@@ -210,7 +210,7 @@ final class UserService: UserServicing {
             let payload = Operations.put_sol_users_sol_me.Input.Body.jsonPayload(
                 name: user.name,
                 birthday: user.birthday,
-                imageUri: ""
+                imageUri: user.imageUrl ?? ""
             )
             let response = try await client.put_sol_users_sol_me(
                 body: .json(payload)

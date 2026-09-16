@@ -5,48 +5,65 @@ import DSKit
 struct ProfileView: View {
     @Injected var userService: UserServicing
     @State private var user: User?
+    @State private var isLoading = true
     @Injected var router: Router
 
     private var initials: String {
-            String(user?.name.first.map(String.init) ?? "?").uppercased()
-        }
+        guard let name = user?.name, !name.isEmpty else { return "?" }
+        return String(name.prefix(1)).uppercased()
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading) {
-                Button {
-                    router.push(.profileEdit)
-                } label: {
-                    HStack(spacing: DSSpacing.md) {
-                        ZStack {
-                            Circle()
-                                .fill(DSColors.disabled.opacity(0.4))
-                                .frame(width: 56, height: 56)
-                            Text(initials)
-                                .font(DSTypography.headline)
-                                .foregroundColor(DSColors.black)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(user?.name.isEmpty == false ? user!.name : "Нет имени")
-                                .font(DSTypography.body.weight(.semibold))
-                                .foregroundColor(DSColors.black)
-                            
-                            HStack {
-                                Text(user?.phone.isEmpty == false ? user!.phone : "Нет номера телефона")
-                                    .font(DSTypography.caption)
+                if isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, minHeight: 120)
+                } else if let user {
+                    Button {
+                        router.push(.profileEdit)
+                    } label: {
+                        HStack(spacing: DSSpacing.md) {
+                            ZStack {
+                                Circle()
+                                    .fill(DSColors.disabled.opacity(0.4))
+                                    .frame(width: 56, height: 56)
+                                Text(initials)
+                                    .font(DSTypography.headline)
                                     .foregroundColor(DSColors.black)
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(DSColors.secondary)
                             }
+
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(user.name.isEmpty ? "Нет имени" : user.name)
+                                    .font(DSTypography.body.weight(.semibold))
+                                    .foregroundColor(DSColors.black)
+
+                                HStack {
+                                    Text(user.phone.isEmpty ? "Нет номера телефона" : user.phone)
+                                        .font(DSTypography.caption)
+                                        .foregroundColor(DSColors.black)
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(DSColors.secondary)
+                                }
+                            }
+                            Spacer()
                         }
-                        Spacer()
-                        
                     }
+                    .padding(.top, DSSpacing.sm)
+                } else {
+                    VStack(spacing: DSSpacing.sm) {
+                        Text("Не удалось загрузить данные профиля")
+                            .font(DSTypography.caption)
+                            .foregroundColor(DSColors.secondary)
+                        Button("Повторить") {
+                            Task { await loadProfile() }
+                        }
+                        .font(DSTypography.caption.weight(.semibold))
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 80)
                 }
-                .padding(.top, DSSpacing.sm)
-                
+
                 Text("История заказов")
                     .font(DSTypography.order.weight(.regular))
                     .padding(.top, DSSpacing.lg)
@@ -54,13 +71,19 @@ struct ProfileView: View {
                 OrderHistoryView()
             }
             .padding(DSSpacing.lg)
-            .task {
-                user = await userService.getProfileInfo()
-            }
             .background(DSColors.background)
             .navigationTitle("Профиль")
             .navigationBarTitleDisplayMode(.inline)
         }
+        .task {
+            await loadProfile()
+        }
+    }
+
+    private func loadProfile() async {
+        isLoading = true
+        user = await userService.getProfileInfo()
+        isLoading = false
     }
 }
 
@@ -203,9 +226,9 @@ struct ProfileEditView: View {
         .task {
             let user = await userService.getProfileInfo()
             originalUser = user
-            name = user.name
-            phone = user.phone
-            birthday = user.birthday
+            name = user?.name ?? "No name"
+            phone = user?.phone ?? "No phone"
+            birthday = user?.birthday ?? "No birthday date"
             isLoading = false
         }
         .confirmationDialog(
