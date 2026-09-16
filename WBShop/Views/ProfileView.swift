@@ -90,8 +90,7 @@ struct ProfileView: View {
 struct ProfileEditView: View {
     @Environment(\.dismiss) private var dismiss
     @Injected private var userService: UserServicing
-
-    var onLoggedOut: () -> Void = {}
+    @Injected private var router: Router
 
     @State private var name: String = ""
     @State private var phone: String = ""
@@ -293,13 +292,13 @@ struct ProfileEditView: View {
 
     private func performLogout() async {
         if await userService.logout() {
-            onLoggedOut()
+            router.logout()
         }
     }
 
     private func performDeleteAccount() async {
         if await userService.deleteAccount() {
-            onLoggedOut()
+            router.logout()
         }
     }
 }
