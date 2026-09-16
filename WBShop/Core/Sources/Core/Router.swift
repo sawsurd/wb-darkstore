@@ -5,12 +5,16 @@ public enum Route: Hashable {
     case login
     case search
     case category(id: String, name: String)
+    case profile
+    case profileEdit
 }
 
 public protocol RouterProtocol: AnyObject {
     func push(_ route: Route)
     func pop()
     func popToRoot()
+    func login()
+    func logout()
 }
 
 public final class Router: ObservableObject, RouterProtocol {
@@ -35,6 +39,13 @@ public final class Router: ObservableObject, RouterProtocol {
     public func login() {
         withAnimation(.easeInOut(duration: 0.35)) {
             isAuthenticated = true
+            path = NavigationPath()
+        }
+    }
+
+    public func logout() {
+        withAnimation(.easeInOut(duration: 0.35)) {
+            isAuthenticated = false
             path = NavigationPath()
         }
     }

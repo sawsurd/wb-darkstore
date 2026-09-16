@@ -8,23 +8,42 @@ extension ProductPreview: Identifiable {
 
 struct ContentView: View {
     @Injected var productService: ProductServicing
+    @Injected var router: Router
+
     @State private var selectedProduct: ProductPreview?
 
-    private let horizontalPadding = DSSpacing.md
-    private let cardSpacing = DSSpacing.xs
-    private let rowSpacing = 18.0
-
     var body: some View {
-        ProductGridView(
-            products: productService.products,
-            onSelectProduct: { selectedProduct = $0 },
-            isFavorite: { productService.isFavorite(id: $0) },
-            onToggleFavorite: { product in
-                Task { await productService.toggleFavorite(id: product.id) }
+        VStack(spacing: DSSpacing.md) {
+            HStack(spacing: DSSpacing.md) {
+                AddressSelectorView()
+
+                Button {
+                    router.push(.profile)
+                } label: {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(DSColors.black)
+                        .frame(width: 36, height: 36)
+                        .background(DSColors.lightPurple)
+                        .clipShape(Circle())
+                }
             }
-        )
-        .navigationTitle("Для тебя")
-        .background(DSColors.surface)
+            .padding(.horizontal, DSSpacing.md)
+            .padding(.vertical, DSSpacing.sm)
+            .background(DSColors.smoky)
+            .cornerRadius(DSRadius.xl)
+            .padding(.horizontal, DSSpacing.lg)
+
+            ProductGridView(
+                products: productService.products,
+                onSelectProduct: { selectedProduct = $0 },
+                isFavorite: { productService.isFavorite(id: $0) },
+                onToggleFavorite: { product in
+                    Task { await productService.toggleFavorite(id: product.id) }
+                }
+            )
+            .background(DSColors.surface)
+        }
         .task {
             await productService.fetchProducts()
         }
@@ -45,7 +64,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    NavigationStack {
-        ContentView()
-    }
+    ContentView()
 }
