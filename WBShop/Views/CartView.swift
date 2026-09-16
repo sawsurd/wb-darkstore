@@ -2,6 +2,8 @@ import SwiftUI
 import Core
 import DSKit
 
+extension Components.Schemas.Order: Identifiable {}
+
 struct CartView: View {
     let onDismiss: () -> Void
     @Injected var cart: CartServicing
@@ -9,6 +11,9 @@ struct CartView: View {
     @State private var selectedAddressId: String?
     @AppStorage("selectedAddressId") private var savedSelectedAddressId = ""
     @State private var isShowingAddressSelection = false
+    @State private var orderToShow: Order?
+    @State private var isPlacingOrder = false
+    @State private var isInitialLoading = true
 
     private var hasUnavailableProducts: Bool {
         cart.productsInCart.contains { !$0.isAvailable }
@@ -52,119 +57,130 @@ struct CartView: View {
                 .padding(.top, DSSpacing.sm_md)
                 .padding(.horizontal, DSSpacing.md)
 
-                List {
-                    ForEach(cart.productsInCart) { product in
-                        CartItemView(
-                            product: product,
-                            onIncrement: {
-                                Task { await cart.addProductToCart(id: product.id) }
-                            },
-                            onDecrement: {
-                                Task { await cart.removeProductFromCart(id: product.id) }
-                            }
-                        )
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                Task {
-                                    await cart.deleteProductFromCart(id: product.id)
+                if isInitialLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if cart.productsInCart.isEmpty {
+                    ContentUnavailableView(
+                        "Корзина пуста",
+                        systemImage: "cart",
+                        description: Text("Добавьте товары из каталога, чтобы оформить заказ")
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List {
+                        ForEach(cart.productsInCart) { product in
+                            CartItemView(
+                                product: product,
+                                onIncrement: {
+                                    Task { await cart.addProductToCart(id: product.id) }
+                                },
+                                onDecrement: {
+                                    Task { await cart.removeProductFromCart(id: product.id) }
                                 }
-                            } label: {
-                                Label("Удалить", systemImage: "trash")
+                            )
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    Task {
+                                        await cart.deleteProductFromCart(id: product.id)
+                                    }
+                                } label: {
+                                    Label("Удалить", systemImage: "trash")
+                                }
                             }
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: DSSpacing.lg, trailing: 0))
                         }
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: DSSpacing.lg, trailing: 0))
-                    }
-                    
-                    VStack(spacing: DSSpacing.xl) {
-                        Button {
-                            isShowingAddressSelection = true
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(currentAddressLine)
-                                        .font(DSTypography.bodyBold)
-                                        .foregroundColor(DSColors.black)
-                                        .lineLimit(1)
-                                    if !currentAddressDetails.isEmpty {
-                                        Text(currentAddressDetails)
-                                            .font(DSTypography.caption)
+
+                        VStack(spacing: DSSpacing.xl) {
+                            Button {
+                                isShowingAddressSelection = true
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(currentAddressLine)
+                                            .font(DSTypography.bodyBold)
                                             .foregroundColor(DSColors.black)
                                             .lineLimit(1)
+                                        if !currentAddressDetails.isEmpty {
+                                            Text(currentAddressDetails)
+                                                .font(DSTypography.caption)
+                                                .foregroundColor(DSColors.black)
+                                                .lineLimit(1)
+                                        }
                                     }
+                                    Image(systemName: "chevron.right")
+                                        .font(DSTypography.bodyBold)
+                                        .foregroundColor(DSColors.black)
+                                    Spacer()
                                 }
+                            }
+                            .buttonStyle(.plain)
+
+                            HStack {
+                                Text("Оплата картой")
+                                    .font(DSTypography.priceBold)
                                 Image(systemName: "chevron.right")
                                     .font(DSTypography.bodyBold)
                                     .foregroundColor(DSColors.black)
                                 Spacer()
                             }
-                        }
-                        .buttonStyle(.plain)
-                        
-                        HStack {
-                            Text("Оплата картой")
-                                .font(DSTypography.priceBold)
-                            Image(systemName: "chevron.right")
-                                .font(DSTypography.bodyBold)
-                                .foregroundColor(DSColors.black)
-                            Spacer()
-                        }
-                        
-                        HStack {
-                            Text("Итого")
-                                .font(DSTypography.priceBold)
-                            Spacer()
-                            DSPriceText(Double(cart.totalPrice), font: DSTypography.priceBold)
-                        }
 
-                        VStack {
                             HStack {
-                                Text("\(totalProductsCount) товаров")
-                                    .font(DSTypography.caption)
+                                Text("Итого")
+                                    .font(DSTypography.priceBold)
                                 Spacer()
-                                DSPriceText(Double(cart.totalPrice), font: DSTypography.caption)
+                                DSPriceText(Double(cart.totalPrice), font: DSTypography.priceBold)
                             }
-                            
-                            HStack {
-                                Text("Доставка")
-                                    .font(DSTypography.caption)
-                                Spacer()
-                                Text("Бесплатно")
-                                    .font(DSTypography.caption)
+
+                            VStack {
+                                HStack {
+                                    Text("\(totalProductsCount) товар\(pluralSuffix(totalProductsCount))")
+                                        .font(DSTypography.caption)
+                                    Spacer()
+                                    DSPriceText(Double(cart.totalPrice), font: DSTypography.caption)
+                                }
+
+                                HStack {
+                                    Text("Доставка")
+                                        .font(DSTypography.caption)
+                                    Spacer()
+                                    Text("Бесплатно")
+                                        .font(DSTypography.caption)
+                                }
                             }
                         }
-                    }
-                    .padding(.horizontal, DSSpacing.md)
-                    .padding(.top, DSSpacing.md)
-                    .padding(.bottom, DSSpacing.xxl)
-                    .background(LinearGradient.figmaSubtlePinkPurple)
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                    
-                    DSButton(
-                        title: "Заказать",
-                        style: .gradient,
-                        size: .medium,
-                        fillWidth: true
-                    ) {
-                        Task {
-                            let addressIdToUse = selectedAddressId ?? userService.addresses.first?.id ?? ""
-                            await cart.createOrder(paymentMethod: "CASH", addressId: addressIdToUse)
-                            onDismiss()
+                        .padding(.horizontal, DSSpacing.md)
+                        .padding(.top, DSSpacing.md)
+                        .padding(.bottom, DSSpacing.xxl)
+                        .background(LinearGradient.figmaSubtlePinkPurple)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+
+                        DSButton(
+                            title: "Заказать",
+                            style: .gradient,
+                            size: .medium,
+                            fillWidth: true
+                        ) {
+                            Task { await placeOrder() }
                         }
+                        .disabled(cart.productsInCart.isEmpty || hasUnavailableProducts || userService.addresses.isEmpty || isPlacingOrder)
+                        .opacity((hasUnavailableProducts || userService.addresses.isEmpty) ? 0.5 : 1)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
-                    .disabled(cart.productsInCart.isEmpty || hasUnavailableProducts || userService.addresses.isEmpty)
-                    .opacity((hasUnavailableProducts || userService.addresses.isEmpty) ? 0.5 : 1)
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
             }
         }
         .task {
+            defer { isInitialLoading = false }
+
+            await cart.loadInitialSnapshot()
             await cart.fetchProducts()
             await userService.getAddresses()
 
@@ -178,6 +194,12 @@ struct CartView: View {
         }
         .sheet(isPresented: $isShowingAddressSelection) {
             AddressesSelectionListView(selectedAddressId: $selectedAddressId)
+        }
+        .sheet(item: $orderToShow) { order in
+            OrderDetailView(order: order) {
+                orderToShow = nil
+                onDismiss()
+            }
         }
         .onChange(of: selectedAddressId) { _, newValue in
             guard let newValue else { return }
@@ -196,7 +218,17 @@ struct CartView: View {
                 userService.clearErrorMessage()
             }
         )
-        
+    }
+
+    private func placeOrder() async {
+        guard let addressIdToUse = selectedAddressId ?? userService.addresses.first?.id else { return }
+
+        isPlacingOrder = true
+        defer { isPlacingOrder = false }
+        await cart.createOrder(paymentMethod: "CASH", addressId: addressIdToUse)
+        guard cart.errorMessage == nil else { return }
+        await userService.getOrders()
+        orderToShow = userService.orders.first(where: { $0.status == .active })
     }
 }
 
@@ -215,7 +247,7 @@ struct CartItemView: View {
         HStack(alignment: .top, spacing: DSSpacing.md) {
             ZStack {
                 if let imageUrl = URL(string: product.image) {
-                    AsyncImage(url: imageUrl) { phase in
+                    CachedAsyncImage(url: imageUrl) { phase in
                         switch phase {
                         case .empty:
                             ProgressView()

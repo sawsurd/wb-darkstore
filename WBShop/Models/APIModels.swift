@@ -20,6 +20,10 @@ struct IdentifiableAddress: Identifiable, Hashable {
     var address: Components.Schemas.Address
 }
 
+typealias Order = Components.Schemas.Order
+
+typealias OrderItem = Components.Schemas.OrderItem
+
 extension Category: Identifiable {}
 
 struct CartModel {
